@@ -101,3 +101,33 @@ export interface CareerStats {
   championships: number;
   defending: boolean;
 }
+
+export interface LapTime {
+  lapNumber: string;
+  position: string;
+  time: string;
+}
+
+export interface DriverLaps {
+  driverId: string;
+  Driver: Driver;
+  Constructor: Constructor;
+  Laps: LapTime[];
+}
+
+export interface TelemetryData {
+  season: string;
+  round: string;
+  raceName: string;
+  Circuit: {
+    circuitId: string;
+    circuitName: string;
+    Location: {
+      locality: string;
+      country: string;
+    };
+  };
+  results?: RaceResult[];
+  laps?: DriverLaps[];
+  pitStops?: PitStop[];
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { Navbar } from "./src/components/shared";
+import { Navbar, ErrorBoundary, ToastProvider } from "./src/components/shared";
 import {
   Dashboard,
   Standings,
@@ -33,4 +33,10 @@ const App: React.FC = () => {
 };
 
 const root = createRoot(document.getElementById("root")!);
-root.render(<App />);
+root.render(
+  <ErrorBoundary>
+    <ToastProvider>
+      <App />
+    </ToastProvider>
+  </ErrorBoundary>
+);

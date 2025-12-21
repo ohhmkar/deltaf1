@@ -47,7 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
       </div>
       <div className="hidden md:flex justify-center w-full text-neutral-600 text-[10px] font-mono group-hover:text-neutral-500">
         <span className="group-hover:hidden transition-opacity duration-300">
-          v1.2.1
+          v1.3
         </span>
         <span className="hidden group-hover:inline opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-150">
           {"<3 by ohhmkar"}

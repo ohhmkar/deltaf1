@@ -39,7 +39,11 @@ Track live standings, explore race calendars, compare drivers, and dive into car
 
 ### 5. Telemetry
 
-- _Yet to be implemented_
+- **Race Analysis** — Deep dive into race results, final positions, and points
+- **Race Pace** — Lap time analysis with fastest and average lap times
+- **Tyre Strategy** — Pit stop data with timing and duration
+- Season selector to analyze historical races
+- On-demand data loading with elegant loading states
 
 ## Tech Stack
 

@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## Sat 21/12/25 Ver 1.3
+
+- Added season/race selector with on-demand data loading
+- Created API caching system with 5-min expiry to reduce redundant requests
+- Enhanced API service with retry logic and exponential backoff
+- Added ErrorBoundary component for graceful error handling
+- Created Toast notification system with success/error/warning/info types
+- Added skeleton loading components (Card, Table, List, Text)
+- Built comparison chart components (ComparisonBar, RadarChart)
+- Created useApi hook for consistent data fetching patterns
+- Added theme toggle hook for future dark/light mode support
+
 ## Wed 10/12/25. Ver 1.2
 
 - Implemented component structure and compressed code.
