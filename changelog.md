@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Sat 21/12/25 Ver 1.3
+## Sun 21/12/25 Ver 1.3
 
 - Added season/race selector with on-demand data loading
 - Created API caching system with 5-min expiry to reduce redundant requests

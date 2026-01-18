@@ -9,6 +9,7 @@ import {
   Telemetry,
 } from "./src/components/views";
 import { preloadCareerStats } from "./src/services/statsCache";
+import { ThemeProvider } from "./src/context/ThemeContext";
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -19,7 +20,7 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-neutral-200">
+    <div className="min-h-screen bg-[#0a0a0a] light:bg-neutral-50 text-neutral-200 light:text-neutral-800 transition-colors duration-300">
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
       <main className="md:pl-16 h-screen overflow-hidden">
         {activeTab === "dashboard" && <Dashboard onNavigate={setActiveTab} />}
@@ -35,8 +36,10 @@ const App: React.FC = () => {
 const root = createRoot(document.getElementById("root")!);
 root.render(
   <ErrorBoundary>
-    <ToastProvider>
-      <App />
-    </ToastProvider>
+    <ThemeProvider>
+      <ToastProvider>
+        <App />
+      </ToastProvider>
+    </ThemeProvider>
   </ErrorBoundary>
 );

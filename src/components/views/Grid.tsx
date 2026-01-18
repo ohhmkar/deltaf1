@@ -19,7 +19,7 @@ export const Grid: React.FC = () => {
   const [drivers, setDrivers] = useState<DriverStanding[]>([]);
   const [constructors, setConstructors] = useState<ConstructorStanding[]>([]);
   const [careerStats, setCareerStats] = useState<Record<string, CareerStats>>(
-    {}
+    {},
   );
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(isStatsLoading());
@@ -74,7 +74,7 @@ export const Grid: React.FC = () => {
               (d: any) =>
                 d.Constructors &&
                 d.Constructors[0] &&
-                d.Constructors[0].constructorId === c.Constructor.constructorId
+                d.Constructors[0].constructorId === c.Constructor.constructorId,
             );
             return {
               id: c.Constructor.constructorId,
@@ -346,7 +346,7 @@ export const Grid: React.FC = () => {
         <div className="flex space-x-4 mt-4 md:mt-0">
           <button
             onClick={() => setTab("lineups")}
-            className={`px-4 py-2 text-sm rounded transition-colors ${
+            className={`px-4 py-2 text-sm rounded transition-colors min-w-[110px] ${
               tab === "lineups"
                 ? "bg-white text-black font-medium"
                 : "text-neutral-500 hover:text-white"
@@ -356,7 +356,7 @@ export const Grid: React.FC = () => {
           </button>
           <button
             onClick={() => setTab("drivers")}
-            className={`px-4 py-2 text-sm rounded transition-colors ${
+            className={`px-4 py-2 text-sm rounded transition-colors min-w-[110px] ${
               tab === "drivers"
                 ? "bg-white text-black font-medium"
                 : "text-neutral-500 hover:text-white"
@@ -366,7 +366,7 @@ export const Grid: React.FC = () => {
           </button>
           <button
             onClick={() => setTab("teams")}
-            className={`px-4 py-2 text-sm rounded transition-colors ${
+            className={`px-4 py-2 text-sm rounded transition-colors min-w-[110px] ${
               tab === "teams"
                 ? "bg-white text-black font-medium"
                 : "text-neutral-500 hover:text-white"

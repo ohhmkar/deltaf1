@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { fetchData } from "../../services/api";
 import { getTeamHex, formatDateLocal } from "../../utils/helpers";
-import { TeamLogo, Flag } from "../shared";
+import { TeamLogo, Flag, SkeletonCard, SkeletonList } from "../shared";
 import type { Race, DriverStanding, ConstructorStanding } from "../../types";
 
 interface DashboardProps {
@@ -20,69 +20,85 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     total: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [countdown, setCountdown] = useState<string>("");
   const [onThisDay, setOnThisDay] = useState<string | null>(null);
 
+  const loadData = useCallback(async () => {
+    const data = await fetchData("/current.json", { useCache: false });
+    if (data) {
+      const races: Race[] = data.RaceTable.Races;
+      const now = new Date();
+      const upcoming = races.find((r) => {
+        if (!r.date || !r.time) return false;
+        return new Date(`${r.date}T${r.time}`) > now;
+      });
+      const past = [...races].reverse().find((r) => {
+        if (!r.date || !r.time) return false;
+        return new Date(`${r.date}T${r.time}`) < now;
+      });
+
+      const completedRaces = races.filter((r) => {
+        if (!r.date || !r.time) return false;
+        return new Date(`${r.date}T${r.time}`) < now;
+      }).length;
+      setSeasonProgress({ completed: completedRaces, total: races.length });
+
+      setNextRace(upcoming || null);
+
+      if (past) {
+        const resultsData = await fetchData(
+          `/${past.season}/${past.round}/results.json`,
+          { useCache: false }
+        );
+        if (resultsData && resultsData.RaceTable.Races[0]) {
+          setLastRace(resultsData.RaceTable.Races[0]);
+        }
+      }
+
+      const dData = await fetchData("/current/driverStandings.json", {
+        useCache: false,
+      });
+      const cData = await fetchData("/current/constructorStandings.json", {
+        useCache: false,
+      });
+
+      setStandings({
+        drivers:
+          dData?.StandingsTable?.StandingsLists[0]?.DriverStandings.slice(
+            0,
+            5
+          ) || [],
+        constructors:
+          cData?.StandingsTable?.StandingsLists[0]?.ConstructorStandings.slice(
+            0,
+            5
+          ) || [],
+      });
+      const facts = [
+        "The first F1 race was held at Silverstone in 1950.",
+        "Ferrari is the oldest and most successful team in F1 history.",
+        "Lewis Hamilton and Michael Schumacher share the record for most championships (7).",
+        "Max Verstappen is the youngest driver to start a Formula 1 race (17 years old).",
+        "The 2024 season features a record-breaking 24 races.",
+      ];
+      setOnThisDay(facts[Math.floor(Math.random() * facts.length)]);
+    }
+  }, []);
+
   useEffect(() => {
     const load = async () => {
-      const data = await fetchData("/current.json");
-      if (data) {
-        const races: Race[] = data.RaceTable.Races;
-        const now = new Date();
-        const upcoming = races.find((r) => {
-          if (!r.date || !r.time) return false;
-          return new Date(`${r.date}T${r.time}`) > now;
-        });
-        const past = [...races].reverse().find((r) => {
-          if (!r.date || !r.time) return false;
-          return new Date(`${r.date}T${r.time}`) < now;
-        });
-
-        const completedRaces = races.filter((r) => {
-          if (!r.date || !r.time) return false;
-          return new Date(`${r.date}T${r.time}`) < now;
-        }).length;
-        setSeasonProgress({ completed: completedRaces, total: races.length });
-
-        setNextRace(upcoming || null);
-
-        if (past) {
-          const resultsData = await fetchData(
-            `/${past.season}/${past.round}/results.json`
-          );
-          if (resultsData && resultsData.RaceTable.Races[0]) {
-            setLastRace(resultsData.RaceTable.Races[0]);
-          }
-        }
-
-        const dData = await fetchData("/current/driverStandings.json");
-        const cData = await fetchData("/current/constructorStandings.json");
-
-        setStandings({
-          drivers:
-            dData?.StandingsTable?.StandingsLists[0]?.DriverStandings.slice(
-              0,
-              5
-            ) || [],
-          constructors:
-            cData?.StandingsTable?.StandingsLists[0]?.ConstructorStandings.slice(
-              0,
-              5
-            ) || [],
-        });
-        const facts = [
-          "The first F1 race was held at Silverstone in 1950.",
-          "Ferrari is the oldest and most successful team in F1 history.",
-          "Lewis Hamilton and Michael Schumacher share the record for most championships (7).",
-          "Max Verstappen is the youngest driver to start a Formula 1 race (17 years old).",
-          "The 2024 season features a record-breaking 24 races.",
-        ];
-        setOnThisDay(facts[Math.floor(Math.random() * facts.length)]);
-      }
+      await loadData();
       setLoading(false);
     };
     load();
-  }, []);
+  }, [loadData]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     if (!nextRace || !nextRace.date || !nextRace.time) return;
@@ -109,20 +125,49 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
   if (loading)
     return (
-      <div className="flex justify-center items-center h-full">
-        <div className="loader"></div>
+      <div className="p-6 md:p-16 max-w-7xl mx-auto fade-in pb-24 md:pb-12 h-screen overflow-y-auto">
+        <header className="mb-12 border-b border-neutral-800 dark:border-neutral-800 pb-6">
+          <div className="h-8 w-32 bg-neutral-800 rounded animate-pulse mb-2"></div>
+          <div className="h-4 w-48 bg-neutral-800 rounded animate-pulse"></div>
+        </header>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <SkeletonCard className="min-h-[300px]" />
+          <div className="flex flex-col gap-6">
+            <SkeletonCard className="flex-1" />
+            <SkeletonCard className="min-h-[120px]" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-12">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
       </div>
     );
 
   return (
     <div className="p-6 md:p-16 max-w-7xl mx-auto fade-in pb-24 md:pb-12 h-screen overflow-y-auto">
-      <header className="mb-12 border-b border-neutral-800 pb-6">
-        <h1 className="text-2xl font-medium tracking-tight text-white mb-1">
-          Dashboard
-        </h1>
-        <p className="text-neutral-500 text-sm">
-          Overview of the current F1 Season
-        </p>
+      <header className="mb-12 border-b border-neutral-800 dark:border-neutral-800 pb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-medium tracking-tight text-white dark:text-white mb-1">
+              Dashboard
+            </h1>
+            <p className="text-neutral-500 dark:text-neutral-500 text-sm">
+              Overview of the current F1 Season
+            </p>
+          </div>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="p-2 rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-800 transition-all disabled:opacity-50"
+            title="Refresh data"
+          >
+            <i
+              className={`fas fa-sync-alt ${refreshing ? "animate-spin" : ""}`}
+            ></i>
+          </button>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">

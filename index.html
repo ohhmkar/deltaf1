@@ -1,19 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DeltaF1</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+      }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+      /* Dark mode (default) */
       body {
         font-family: 'Inter', sans-serif;
         background-color: #0a0a0a; 
         color: #e5e5e5;
+        transition: background-color 0.3s ease, color 0.3s ease;
       }
-      /* Custom scrollbar for minimal theme */
+      
+      /* Light mode */
+      html.light body {
+        background-color: #fafafa;
+        color: #171717;
+      }
+
+      /* Custom scrollbar - Dark */
       ::-webkit-scrollbar {
         width: 6px;
         height: 6px;
@@ -28,11 +42,31 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #404040;
       }
+
+      /* Custom scrollbar - Light */
+      html.light ::-webkit-scrollbar-thumb {
+        background: #d4d4d4;
+      }
+      html.light ::-webkit-scrollbar-thumb:hover {
+        background: #a3a3a3;
+      }
+
+      /* Minimal card - Dark */
       .minimal-card {
         background: transparent;
         border: 1px solid #262626; 
         border-radius: 8px;
+        transition: border-color 0.3s ease, background-color 0.3s ease;
       }
+
+      /* Minimal card - Light */
+      html.light .minimal-card {
+        background: #ffffff;
+        border: 1px solid #e5e5e5;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      /* Loader - Dark */
       .loader {
         border: 2px solid #262626;
         border-top: 2px solid #ffffff;
@@ -49,6 +83,17 @@
         height: 14px;
         animation: spin 0.8s linear infinite;
       }
+
+      /* Loader - Light */
+      html.light .loader {
+        border: 2px solid #e5e5e5;
+        border-top: 2px solid #171717;
+      }
+      html.light .loader-small {
+        border: 2px solid #d4d4d4;
+        border-top: 2px solid #525252;
+      }
+
       @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
@@ -70,6 +115,67 @@
           transform: translateX(0);
         }
       }
+
+      /* Light mode utility classes */
+      html.light .light\:bg-white { background-color: #ffffff; }
+      html.light .light\:bg-neutral-50 { background-color: #fafafa; }
+      html.light .light\:bg-neutral-100 { background-color: #f5f5f5; }
+      html.light .light\:bg-neutral-200 { background-color: #e5e5e5; }
+      html.light .light\:text-neutral-900 { color: #171717; }
+      html.light .light\:text-neutral-800 { color: #262626; }
+      html.light .light\:text-neutral-700 { color: #404040; }
+      html.light .light\:text-neutral-600 { color: #525252; }
+      html.light .light\:text-neutral-500 { color: #737373; }
+      html.light .light\:text-neutral-400 { color: #a3a3a3; }
+      html.light .light\:border-neutral-200 { border-color: #e5e5e5; }
+      html.light .light\:border-neutral-300 { border-color: #d4d4d4; }
+      html.light .light\:hover\:bg-neutral-100:hover { background-color: #f5f5f5; }
+      html.light .light\:hover\:text-neutral-700:hover { color: #404040; }
+
+      /* Light mode - Override all white text to black/dark */
+      html.light .text-white { color: #171717 !important; }
+      html.light .text-neutral-200 { color: #404040 !important; }
+      html.light .text-neutral-300 { color: #525252 !important; }
+      html.light .text-neutral-400 { color: #737373 !important; }
+      html.light .text-neutral-500 { color: #737373 !important; }
+      html.light .text-neutral-600 { color: #525252 !important; }
+      
+      /* Light mode backgrounds */
+      html.light .bg-neutral-900 { background-color: #f5f5f5 !important; }
+      html.light .bg-neutral-900\/30 { background-color: rgba(245, 245, 245, 0.5) !important; }
+      html.light .bg-neutral-900\/50 { background-color: rgba(245, 245, 245, 0.7) !important; }
+      html.light .bg-neutral-950 { background-color: #ffffff !important; }
+      html.light .bg-neutral-800 { background-color: #e5e5e5 !important; }
+      html.light .bg-\[\#0a0a0a\] { background-color: #fafafa !important; }
+      
+      /* Light mode borders */
+      html.light .border-neutral-800 { border-color: #e5e5e5 !important; }
+      html.light .border-neutral-800\/50 { border-color: rgba(229, 229, 229, 0.7) !important; }
+      html.light .border-neutral-700 { border-color: #d4d4d4 !important; }
+      
+      /* Light mode hover states */
+      html.light .hover\:bg-neutral-800:hover { background-color: #e5e5e5 !important; }
+      html.light .hover\:bg-neutral-900:hover { background-color: #f5f5f5 !important; }
+      html.light .hover\:bg-neutral-900\/50:hover { background-color: rgba(245, 245, 245, 0.7) !important; }
+      html.light .hover\:text-white:hover { color: #171717 !important; }
+      html.light .hover\:text-neutral-300:hover { color: #404040 !important; }
+      html.light .hover\:border-neutral-600:hover { border-color: #a3a3a3 !important; }
+      html.light .hover\:border-neutral-700:hover { border-color: #d4d4d4 !important; }
+      
+      /* Light mode specific elements */
+      html.light .text-yellow-500 { color: #ca8a04 !important; }
+      html.light .text-red-500 { color: #dc2626 !important; }
+      html.light .text-red-600 { color: #dc2626 !important; }
+      html.light .text-green-400 { color: #16a34a !important; }
+      html.light .text-green-500 { color: #16a34a !important; }
+      html.light .text-orange-600 { color: #ea580c !important; }
+      
+      /* Light mode navbar */
+      html.light .bg-neutral-950 { background-color: #ffffff !important; border-color: #e5e5e5 !important; }
+      
+      /* Light mode form elements */
+      html.light select { background-color: #ffffff !important; border-color: #d4d4d4 !important; color: #171717 !important; }
+      html.light select option { background-color: #ffffff !important; color: #171717 !important; }
     </style>
   <script type="importmap">
 
