@@ -4,19 +4,36 @@ import {
   fetchDrivers,
   fetchLocations,
   fetchRaceControl,
+  fetchPositions,
+  fetchStints,
   OF1Session,
   OF1Driver,
   OF1Loc,
   OF1RaceControl,
+  OF1Position,
+  OF1Stint,
 } from "../../services/openf1";
 
 const WINDOW_MS = 60_000; // location fetched in 60s chunks (~0.5MB each, all cars)
 const VIEW = 1000; // svg viewBox size
 const PAD = 60;
 const SPEEDS = [1, 2, 4, 8, 16];
+const DNF_GAP_MS = 20_000; // no location for this long (in a loaded window) => car is out
 
 type Pt = { t: number; x: number; y: number };
+type Pos = { t: number; position: number };
 type FeedItem = OF1RaceControl & { t: number };
+
+// tyre compound colour + single-letter label
+const COMPOUND: Record<string, { c: string; l: string }> = {
+  SOFT: { c: "#ef4444", l: "S" },
+  MEDIUM: { c: "#eab308", l: "M" },
+  HARD: { c: "#e5e5e5", l: "H" },
+  INTERMEDIATE: { c: "#22c55e", l: "I" },
+  WET: { c: "#3b82f6", l: "W" },
+};
+const compound = (name: string) =>
+  COMPOUND[name?.toUpperCase()] || { c: "#525252", l: "?" };
 
 // border colour for a race-control event
 const flagColor = (e: OF1RaceControl): string => {
@@ -54,6 +71,44 @@ const sampleAt = (arr: Pt[], t: number): Pt | null => {
   return { t, x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f };
 };
 
+// a car is "out" once it sits still for DNF_GAP_MS — covers both retirements
+// that stop transmitting and cars parked trackside that keep transmitting.
+const STAT_EPS = 90; // track spans thousands of units; <90 = not moving
+const stoppedFor = (arr: Pt[], t: number): boolean => {
+  let minX = Infinity,
+    maxX = -Infinity,
+    minY = Infinity,
+    maxY = -Infinity,
+    count = 0;
+  for (let i = arr.length - 1; i >= 0; i--) {
+    if (arr[i].t > t) continue;
+    if (arr[i].t < t - DNF_GAP_MS) break;
+    minX = Math.min(minX, arr[i].x);
+    maxX = Math.max(maxX, arr[i].x);
+    minY = Math.min(minY, arr[i].y);
+    maxY = Math.max(maxY, arr[i].y);
+    count++;
+  }
+  if (count < 2) return false; // not enough samples; let the no-data rule decide
+  return maxX - minX < STAT_EPS && maxY - minY < STAT_EPS;
+};
+
+// last position at or before t (discrete — positions don't interpolate)
+const posAt = (arr: Pos[], t: number): number | null => {
+  if (!arr.length || t < arr[0].t) return null;
+  let lo = 0,
+    hi = arr.length - 1,
+    res: number | null = null;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (arr[mid].t <= t) {
+      res = arr[mid].position;
+      lo = mid + 1;
+    } else hi = mid - 1;
+  }
+  return res;
+};
+
 export const Replay: React.FC = () => {
   const year0 = new Date().getFullYear();
   const years = Array.from({ length: year0 - 2022 }, (_, i) => 2023 + i);
@@ -70,6 +125,8 @@ export const Replay: React.FC = () => {
   } | null>(null);
   const [trackPath, setTrackPath] = useState("");
   const [feed, setFeed] = useState<FeedItem[]>([]);
+  const [posByDriver, setPosByDriver] = useState<Map<number, Pos[]>>(new Map());
+  const [stints, setStints] = useState<Map<number, OF1Stint[]>>(new Map());
   const [cursor, setCursor] = useState(0); // ms from race start
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(4);
@@ -94,10 +151,15 @@ export const Replay: React.FC = () => {
     let cancel = false;
     setStatus("Loading races…");
     fetchRaceSessions(year)
-      .then((s) => {
+      .then((all) => {
         if (cancel) return;
+        // only races that have already finished are replayable
+        const now = Date.now();
+        const s = all
+          .filter((x) => Date.parse(x.date_end) < now)
+          .sort((a, b) => Date.parse(a.date_start) - Date.parse(b.date_start));
         setSessions(s);
-        setStatus(s.length ? "" : "No races for this year yet.");
+        setStatus(s.length ? "" : "No completed races for this year yet.");
       })
       .catch(() => !cancel && setStatus("Failed to load races."));
     return () => {
@@ -117,9 +179,11 @@ export const Replay: React.FC = () => {
     setBounds(null);
     setTrackPath("");
     setFeed([]);
+    setPosByDriver(new Map());
+    setStints(new Map());
     setStatus("Loading track…");
     try {
-      const [drv, outline, rc] = await Promise.all([
+      const [drv, outline, rc, pos, st] = await Promise.all([
         fetchDrivers(s.session_key),
         // first 3 min of one car traces the whole circuit (ponytail: cheap map)
         fetchLocations(
@@ -129,6 +193,8 @@ export const Replay: React.FC = () => {
           1
         ).catch(() => [] as OF1Loc[]),
         fetchRaceControl(s.session_key).catch(() => [] as OF1RaceControl[]),
+        fetchPositions(s.session_key).catch(() => [] as OF1Position[]),
+        fetchStints(s.session_key).catch(() => [] as OF1Stint[]),
       ]);
       setDrivers(drv);
       setFeed(
@@ -136,6 +202,22 @@ export const Replay: React.FC = () => {
           .map((e) => ({ ...e, t: Date.parse(e.date) }))
           .sort((a, b) => a.t - b.t)
       );
+      const pm = new Map<number, Pos[]>();
+      for (const p of pos) {
+        const arr = pm.get(p.driver_number) || [];
+        arr.push({ t: Date.parse(p.date), position: p.position });
+        pm.set(p.driver_number, arr);
+      }
+      for (const arr of pm.values()) arr.sort((a, b) => a.t - b.t);
+      setPosByDriver(pm);
+      const sm = new Map<number, OF1Stint[]>();
+      for (const x of st) {
+        const arr = sm.get(x.driver_number) || [];
+        arr.push(x);
+        sm.set(x.driver_number, arr);
+      }
+      for (const arr of sm.values()) arr.sort((a, b) => a.lap_start - b.lap_start);
+      setStints(sm);
       const pts = outline.filter((p) => p.x || p.y);
       if (pts.length) {
         const xs = pts.map((p) => p.x),
@@ -272,16 +354,45 @@ export const Replay: React.FC = () => {
     if (feed[i].lap_number) currentLap = feed[i].lap_number!;
   const totalLaps = feed.reduce((m, e) => Math.max(m, e.lap_number || 0), 0);
 
+  // a window we've actually loaded lets us trust "no data" as a retirement signal
+  const curWindowLoaded = loaded.current.has(Math.floor(cursor / WINDOW_MS));
+
   const dots =
     project &&
     drivers
       .map((d) => {
-        const p = sampleAt(points.current.get(d.driver_number) || [], absT);
+        const arr = points.current.get(d.driver_number) || [];
+        const p = sampleAt(arr, absT);
         if (!p) return null;
+        // retired/DNF (skip the grid/start where everyone is briefly stationary):
+        // data stopped, or the car has sat still for a while.
+        if (curWindowLoaded && arr.length && cursor > 120_000) {
+          const noData = absT - arr[arr.length - 1].t > DNF_GAP_MS;
+          if (noData || stoppedFor(arr, absT)) return null;
+        }
         const [cx, cy] = project(p.x, p.y);
         return { d, cx, cy };
       })
       .filter(Boolean) as { d: OF1Driver; cx: number; cy: number }[];
+
+  // running order for the tower, from /position
+  const order = drivers
+    .map((d) => ({
+      d,
+      pos: posAt(posByDriver.get(d.driver_number) || [], absT),
+    }))
+    .filter((r): r is { d: OF1Driver; pos: number } => r.pos != null)
+    .sort((a, b) => a.pos - b.pos);
+
+  // current tyre stint for a driver at the current lap
+  const stintFor = (num: number) => {
+    const arr = stints.get(num);
+    if (!arr || !currentLap) return null;
+    let cur: OF1Stint | null = null;
+    for (const s of arr) if (s.lap_start <= currentLap) cur = s;
+    if (!cur) return null;
+    return { ...cur, age: cur.tyre_age_at_start + (currentLap - cur.lap_start) };
+  };
 
   return (
     <div className="h-screen overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 fade-in">
@@ -441,8 +552,58 @@ export const Replay: React.FC = () => {
           </div>
           </div>
 
+          {/* right column: position tower + race control feed */}
+          <div className="lg:w-80 shrink-0 flex flex-col gap-4">
+
+          {/* position tower (order from /position, tyre from /stints) */}
+          <div className="bg-neutral-950 light:bg-white border border-neutral-800 light:border-neutral-200 rounded-xl flex flex-col">
+            <div className="px-4 py-3 border-b border-neutral-800 light:border-neutral-200 text-sm font-semibold text-white light:text-neutral-900">
+              Running Order
+            </div>
+            {order.length === 0 ? (
+              <p className="p-4 text-neutral-500 text-sm">No position data.</p>
+            ) : (
+              <ul className="overflow-y-auto p-2 max-h-[40vh] lg:max-h-[360px]">
+                {order.map(({ d, pos }) => {
+                  const st = stintFor(d.driver_number);
+                  const tyre = st ? compound(st.compound) : null;
+                  return (
+                    <li
+                      key={d.driver_number}
+                      className="flex items-center gap-2 px-2 py-1.5 text-sm"
+                    >
+                      <span className="w-5 text-right text-neutral-500 light:text-neutral-400 font-mono text-xs tabular-nums">
+                        {pos}
+                      </span>
+                      <span
+                        className="w-1 h-5 rounded-full shrink-0"
+                        style={{ backgroundColor: `#${d.team_colour || "888888"}` }}
+                      />
+                      <span className="font-semibold text-neutral-200 light:text-neutral-800 w-10">
+                        {d.name_acronym}
+                      </span>
+                      {tyre && (
+                        <span className="ml-auto flex items-center gap-1.5 text-xs text-neutral-400">
+                          <span
+                            className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-black"
+                            style={{ backgroundColor: tyre.c }}
+                          >
+                            {tyre.l}
+                          </span>
+                          <span className="tabular-nums w-6 text-right">
+                            {st!.age}L
+                          </span>
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+
           {/* race control feed, synced to the cursor */}
-          <div className="lg:w-80 shrink-0 bg-neutral-950 light:bg-white border border-neutral-800 light:border-neutral-200 rounded-xl flex flex-col">
+          <div className="bg-neutral-950 light:bg-white border border-neutral-800 light:border-neutral-200 rounded-xl flex flex-col">
             <div className="px-4 py-3 border-b border-neutral-800 light:border-neutral-200 text-sm font-semibold text-white light:text-neutral-900">
               Race Control
             </div>
@@ -480,6 +641,7 @@ export const Replay: React.FC = () => {
                 })}
               </ul>
             )}
+          </div>
           </div>
         </div>
       )}

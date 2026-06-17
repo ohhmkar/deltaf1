@@ -4,13 +4,33 @@ import { apiCache } from "./cache";
 // gets its own tiny fetch. Historical data (2023+) is free / no auth.
 const BASE = "https://api.openf1.org/v1";
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// OpenF1's free tier rate-limits bursts, so requests run through a single
+// queue (spaced out) and retry on 429. ponytail: serial is plenty fast here
+// since responses are cached after first load.
+let queue: Promise<unknown> = Promise.resolve();
+
+async function rawGet<T>(path: string): Promise<T> {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const res = await fetch(`${BASE}${path}`);
+    if (res.status === 429) {
+      await sleep(700 * (attempt + 1));
+      continue;
+    }
+    if (!res.ok) throw new Error(`OpenF1 ${res.status}: ${res.statusText}`);
+    return res.json();
+  }
+  throw new Error("OpenF1 429: rate limited");
+}
+
 async function get<T>(path: string, cacheMs = 30 * 60 * 1000): Promise<T> {
   const key = `openf1:${path}`;
   const cached = apiCache.get(key);
   if (cached) return cached;
-  const res = await fetch(`${BASE}${path}`);
-  if (!res.ok) throw new Error(`OpenF1 ${res.status}: ${res.statusText}`);
-  const data = await res.json();
+  const run = queue.then(() => rawGet<T>(path));
+  queue = run.then(() => sleep(120), () => sleep(120)); // space requests, ignore errors
+  const data = await run;
   apiCache.set(key, data, cacheMs);
   return data;
 }
@@ -50,6 +70,26 @@ export interface OF1RaceControl {
 
 export const fetchRaceControl = (sessionKey: number) =>
   get<OF1RaceControl[]>(`/race_control?session_key=${sessionKey}`);
+
+export interface OF1Position {
+  date: string;
+  driver_number: number;
+  position: number;
+}
+
+export const fetchPositions = (sessionKey: number) =>
+  get<OF1Position[]>(`/position?session_key=${sessionKey}`);
+
+export interface OF1Stint {
+  driver_number: number;
+  compound: string;
+  lap_start: number;
+  lap_end: number;
+  tyre_age_at_start: number;
+}
+
+export const fetchStints = (sessionKey: number) =>
+  get<OF1Stint[]>(`/stints?session_key=${sessionKey}`);
 
 export const fetchRaceSessions = (year: number) =>
   get<OF1Session[]>(`/sessions?year=${year}&session_name=Race`);
