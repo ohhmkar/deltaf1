@@ -7,6 +7,7 @@ import {
   Season,
   Grid,
   Telemetry,
+  Replay,
 } from "./src/components/views";
 import { preloadCareerStats } from "./src/services/statsCache";
 import { ThemeProvider } from "./src/context/ThemeContext";
@@ -28,6 +29,7 @@ const App: React.FC = () => {
         {activeTab === "standings" && <Standings />}
         {activeTab === "season" && <Season />}
         {activeTab === "grid" && <Grid />}
+        {activeTab === "replay" && <Replay />}
       </main>
     </div>
   );
