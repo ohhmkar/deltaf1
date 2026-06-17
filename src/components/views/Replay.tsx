@@ -6,6 +6,7 @@ import {
   fetchRaceControl,
   fetchPositions,
   fetchStints,
+  fetchIntervals,
   OF1Session,
   OF1Driver,
   OF1Loc,
@@ -22,7 +23,33 @@ const DNF_GAP_MS = 20_000; // no location for this long (in a loaded window) => 
 
 type Pt = { t: number; x: number; y: number };
 type Pos = { t: number; position: number };
+type Gap = { t: number; gap: number | string | null };
 type FeedItem = OF1RaceControl & { t: number };
+
+// "+1.2s", "+1 LAP", or "" for the leader
+const gapLabel = (g: number | string | null): string => {
+  if (g == null) return "";
+  if (typeof g === "string") return g.startsWith("+") ? g : `+${g}`;
+  return `+${g.toFixed(1)}s`;
+};
+
+// last gap-to-leader sample at or before t (clamps to the first sample — the
+// windowed data can start just after the cursor at a window's leading edge)
+const gapAt = (arr: Gap[], t: number): number | string | null => {
+  if (!arr.length) return null;
+  if (t <= arr[0].t) return arr[0].gap;
+  let lo = 0,
+    hi = arr.length - 1,
+    res: Gap["gap"] = null;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (arr[mid].t <= t) {
+      res = arr[mid].gap;
+      lo = mid + 1;
+    } else hi = mid - 1;
+  }
+  return res;
+};
 
 // tyre compound colour + single-letter label
 const COMPOUND: Record<string, { c: string; l: string }> = {
@@ -140,6 +167,9 @@ export const Replay: React.FC = () => {
   const points = useRef<Map<number, Pt[]>>(new Map());
   const loaded = useRef<Set<number>>(new Set());
   const inflight = useRef<Set<number>>(new Set());
+  const gaps = useRef<Map<number, Gap[]>>(new Map());
+  const loadedGaps = useRef<Set<number>>(new Set());
+  const inflightGaps = useRef<Set<number>>(new Set());
   const cursorRef = useRef(0);
   const activeItemRef = useRef<HTMLLIElement>(null);
 
@@ -176,6 +206,9 @@ export const Replay: React.FC = () => {
     points.current = new Map();
     loaded.current = new Set();
     inflight.current = new Set();
+    gaps.current = new Map();
+    loadedGaps.current = new Set();
+    inflightGaps.current = new Set();
     setBounds(null);
     setTrackPath("");
     setFeed([]);
@@ -267,11 +300,39 @@ export const Replay: React.FC = () => {
           points.current.set(l.driver_number, arr);
         }
         for (const arr of points.current.values()) arr.sort((a, b) => a.t - b.t);
-        loaded.current.add(idx);
         setVersion((v) => v + 1);
       })
       .catch(() => {})
-      .finally(() => inflight.current.delete(idx));
+      // mark attempted either way so a failed/empty window isn't refetched every
+      // cursor tick (that storm is what trips OpenF1's rate limit)
+      .finally(() => {
+        loaded.current.add(idx);
+        inflight.current.delete(idx);
+      });
+  };
+
+  // same windowing for interval (gap-to-leader) data
+  const ensureGaps = (idx: number) => {
+    if (!session || idx < 0 || idx * WINDOW_MS > duration) return;
+    if (loadedGaps.current.has(idx) || inflightGaps.current.has(idx)) return;
+    inflightGaps.current.add(idx);
+    const from = new Date(startMs + idx * WINDOW_MS);
+    const to = new Date(startMs + (idx + 1) * WINDOW_MS);
+    fetchIntervals(session.session_key, from, to)
+      .then((rows) => {
+        for (const r of rows) {
+          const arr = gaps.current.get(r.driver_number) || [];
+          arr.push({ t: Date.parse(r.date), gap: r.gap_to_leader });
+          gaps.current.set(r.driver_number, arr);
+        }
+        for (const arr of gaps.current.values()) arr.sort((a, b) => a.t - b.t);
+        setVersion((v) => v + 1);
+      })
+      .catch(() => {})
+      .finally(() => {
+        loadedGaps.current.add(idx);
+        inflightGaps.current.delete(idx);
+      });
   };
 
   // keep the current + next window warm whenever the cursor moves
@@ -280,6 +341,8 @@ export const Replay: React.FC = () => {
     const idx = Math.floor(cursor / WINDOW_MS);
     ensureWindow(idx);
     ensureWindow(idx + 1);
+    ensureGaps(idx);
+    ensureGaps(idx + 1);
   }, [cursor, session]);
 
   // playback loop
@@ -567,6 +630,10 @@ export const Replay: React.FC = () => {
                 {order.map(({ d, pos }) => {
                   const st = stintFor(d.driver_number);
                   const tyre = st ? compound(st.compound) : null;
+                  const gap =
+                    pos === 1
+                      ? "LEADER"
+                      : gapLabel(gapAt(gaps.current.get(d.driver_number) || [], absT));
                   return (
                     <li
                       key={d.driver_number}
@@ -582,8 +649,11 @@ export const Replay: React.FC = () => {
                       <span className="font-semibold text-neutral-200 light:text-neutral-800 w-10">
                         {d.name_acronym}
                       </span>
+                      <span className="flex-1 text-[11px] font-mono tabular-nums text-neutral-500 light:text-neutral-400">
+                        {gap}
+                      </span>
                       {tyre && (
-                        <span className="ml-auto flex items-center gap-1.5 text-xs text-neutral-400">
+                        <span className="flex items-center gap-1.5 text-xs text-neutral-400 shrink-0">
                           <span
                             className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-black"
                             style={{ backgroundColor: tyre.c }}

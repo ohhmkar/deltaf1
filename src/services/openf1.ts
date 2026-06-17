@@ -80,6 +80,19 @@ export interface OF1Position {
 export const fetchPositions = (sessionKey: number) =>
   get<OF1Position[]>(`/position?session_key=${sessionKey}`);
 
+export interface OF1Interval {
+  date: string;
+  driver_number: number;
+  gap_to_leader: number | string | null;
+}
+
+// windowed (the full-session pull is ~4MB); same date-range trick as location
+export const fetchIntervals = (sessionKey: number, from: Date, to: Date) =>
+  get<OF1Interval[]>(
+    `/intervals?session_key=${sessionKey}` +
+      `&date>${from.toISOString()}&date<${to.toISOString()}`
+  );
+
 export interface OF1Stint {
   driver_number: number;
   compound: string;
