@@ -1,13 +1,20 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router";
 import { fetchData } from "../../services/api";
 import { getTeamHex } from "../../utils/helpers";
 import { TeamLogo, Flag } from "../shared";
 import type { DriverStanding, ConstructorStanding } from "../../types";
 
+type StandingsType = "drivers" | "constructors" | "teammate";
+const STANDINGS_TYPES: StandingsType[] = ["drivers", "constructors", "teammate"];
+
 export const Standings: React.FC = () => {
-  const [type, setType] = useState<"drivers" | "constructors" | "teammate">(
-    "drivers"
-  );
+  const navigate = useNavigate();
+  const { type: typeParam } = useParams<{ type?: string }>();
+  const type: StandingsType = STANDINGS_TYPES.includes(typeParam as StandingsType)
+    ? (typeParam as StandingsType)
+    : "drivers";
+  const setType = (next: StandingsType) => navigate(`/standings/${next}`);
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState<number>(currentYear);
   const [drivers, setDrivers] = useState<DriverStanding[]>([]);

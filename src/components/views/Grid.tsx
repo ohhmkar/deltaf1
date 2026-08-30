@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router";
 import { fetchData } from "../../services/api";
 import {
   subscribeToStats,
@@ -13,8 +14,16 @@ import type {
   CareerStats,
 } from "../../types";
 
+type GridTab = "lineups" | "drivers" | "teams";
+const GRID_TABS: GridTab[] = ["lineups", "drivers", "teams"];
+
 export const Grid: React.FC = () => {
-  const [tab, setTab] = useState<"lineups" | "drivers" | "teams">("lineups");
+  const navigate = useNavigate();
+  const { tab: tabParam } = useParams<{ tab?: string }>();
+  const tab: GridTab = GRID_TABS.includes(tabParam as GridTab)
+    ? (tabParam as GridTab)
+    : "lineups";
+  const setTab = (next: GridTab) => navigate(`/grid/${next}`);
   const [teams, setTeams] = useState<any[]>([]);
   const [drivers, setDrivers] = useState<DriverStanding[]>([]);
   const [constructors, setConstructors] = useState<ConstructorStanding[]>([]);

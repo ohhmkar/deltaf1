@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Sun 30/08/26 Ver 1.6.1
+
+- Grid and Standings sub-tabs are now nested routes (`/grid/drivers`, `/grid/teams`, `/standings/constructors`, `/standings/teammate`) instead of local `useState` - deep-linkable and back-button-able
+
 ## Sun 30/08/26 Ver 1.6
 
 - Added react-router: each tab is now a real URL (`/standings`, `/season`, `/grid`, `/replay`) instead of in-memory `useState` - deep links, back/forward, and refresh all work now

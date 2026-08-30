@@ -25,8 +25,10 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/standings" element={<Standings />} />
+          <Route path="/standings/:type" element={<Standings />} />
           <Route path="/season" element={<Season />} />
           <Route path="/grid" element={<Grid />} />
+          <Route path="/grid/:tab" element={<Grid />} />
           <Route path="/replay" element={<Replay />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
