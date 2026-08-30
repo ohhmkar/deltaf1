@@ -1,5 +1,21 @@
 import { fetchData } from "./api";
 import type { CareerStats } from "../types";
+import championsHistory from "../data/championsHistory.json";
+
+// jolpi.ca (the Ergast mirror this app uses) has no "all seasons this driver
+// won" endpoint - driverStandings/constructorStandings require a season in
+// the path, so computing lifetime titles live means one request per season
+// since 1950. Generated once by scripts/generate-champions.mjs instead; re-run
+// it once a season, after the finale, to pick up a new champion.
+const driverTitles = championsHistory.drivers as Record<string, number>;
+const constructorTitles = championsHistory.constructors as Record<
+  string,
+  number
+>;
+const championsCount = (
+  id: string,
+  type: "drivers" | "constructors"
+): number => (type === "drivers" ? driverTitles : constructorTitles)[id] ?? 0;
 
 const CACHE_KEY = "f1_career_stats";
 const CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -79,7 +95,8 @@ const fetchInBatches = async <T>(
   return results;
 };
 
-// Fetch stats for a single entity (wins & poles only - championships removed to avoid rate limiting)
+// Fetch wins & poles for a single entity (live API call). Championships come
+// from the generated championsCount() above, not a request.
 const fetchEntityWinsAndPoles = async (
   id: string,
   statType: "drivers" | "constructors"
@@ -187,7 +204,7 @@ export const preloadCareerStats = async (): Promise<CachedStats | null> => {
         500
       );
 
-      // Build stats record (championships set to 0 to avoid rate limiting)
+      // Build stats record
       const statsRecord: Record<string, CareerStats> = {};
       winsPolesMap.forEach((winsPoles, id) => {
         const isDriver = driverList.some((d: any) => d.Driver.driverId === id);
@@ -198,7 +215,7 @@ export const preloadCareerStats = async (): Promise<CachedStats | null> => {
         statsRecord[id] = {
           wins: winsPoles.wins,
           poles: winsPoles.poles,
-          championships: 0, // Removed to avoid API rate limiting
+          championships: championsCount(id, isDriver ? "drivers" : "constructors"),
           defending,
         };
       });

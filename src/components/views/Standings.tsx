@@ -39,12 +39,13 @@ export const Standings: React.FC = () => {
       setSelectedIds([]);
       setIsCompareMode(false);
       try {
-        const dData = await fetchData(`/${year}/driverStandings.json`);
+        const [dData, cData] = await Promise.all([
+          fetchData(`/${year}/driverStandings.json`),
+          fetchData(`/${year}/constructorStandings.json`),
+        ]);
         if (dData && dData.StandingsTable.StandingsLists.length > 0) {
           setDrivers(dData.StandingsTable.StandingsLists[0].DriverStandings);
         }
-
-        const cData = await fetchData(`/${year}/constructorStandings.json`);
         if (cData && cData.StandingsTable.StandingsLists.length > 0) {
           setConstructors(
             cData.StandingsTable.StandingsLists[0].ConstructorStandings

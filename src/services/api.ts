@@ -64,32 +64,3 @@ export const fetchData = async (
   // All retries failed
   throw lastError || new Error("Failed to fetch data");
 };
-
-// Telemetry-specific API calls
-export const fetchRaceResults = async (
-  season: string,
-  round: string
-): Promise<any> => {
-  return await fetchData(`/${season}/${round}/results.json`);
-};
-
-export const fetchLapTimes = async (
-  season: string,
-  round: string
-): Promise<any> => {
-  return await fetchData(`/${season}/${round}/laps.json?limit=2000`);
-};
-
-export const fetchPitStops = async (
-  season: string,
-  round: string
-): Promise<any> => {
-  return await fetchData(`/${season}/${round}/pitstops.json`);
-};
-
-export const fetchQualifyingResults = async (
-  season: string,
-  round: string
-): Promise<any> => {
-  return await fetchData(`/${season}/${round}/qualifying.json`);
-};

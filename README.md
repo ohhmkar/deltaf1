@@ -37,13 +37,13 @@ Track live standings, explore race calendars, compare drivers, and dive into car
 - **Driver Stats** — Career statistics including wins, poles, and world titles
 - **Team Stats** — Constructor career achievements
 
-### 5. Telemetry
+### 5. Replay
 
-- **Race Analysis** — Deep dive into race results, final positions, and points
-- **Race Pace** — Lap time analysis with fastest and average lap times
-- **Tyre Strategy** — Pit stop data with timing and duration
-- Season selector to analyze historical races
-- On-demand data loading with elegant loading states
+- **Live Race Replay** — Scrub or play back any race on a track map, driven by live position telemetry
+- **Running Order Tower** — Real-time leaderboard with gap-to-leader, tyre compound, and DNF detection
+- **Race Control Feed** — Flags and messages synced to the replay timeline
+- 2D/3D track view with adjustable playback speed
+- Season and session selector for historical races
 
 ## Tech Stack
 
@@ -51,7 +51,7 @@ Track live standings, explore race calendars, compare drivers, and dive into car
 - **Build Tool:** Vite
 - **Styling:** Tailwind CSS
 - **Icons:** Font Awesome
-- **API:** [Ergast F1 API](http://ergast.com/mrd/) (via jolpi.ca mirror)
+- **API:** [Ergast F1 API](http://ergast.com/mrd/) (via jolpi.ca mirror) for standings/calendar, [OpenF1](https://openf1.org/) for live replay telemetry
 
 ## Project Structure
 
@@ -62,7 +62,7 @@ delta-f1/
 ├── src/
 │   ├── components/
 │   │   ├── shared/        # Navbar, TeamLogo, Flag
-│   │   └── views/         # Dashboard, Standings, Season, Grid, Telemetry
+│   │   └── views/         # Dashboard, Standings, Season, Grid, Replay
 │   ├── services/          # API functions
 │   ├── types/             # TypeScript interfaces
 │   └── utils/             # Helper functions (team colors, country codes, etc.)
@@ -93,6 +93,14 @@ delta-f1/
    ```bash
    npm run dev
    ```
+
+## Updating generated data
+
+`src/data/championsHistory.json` (drivers'/constructors' title counts, shown on The Grid) is generated, not hand-maintained — jolpi.ca has no "all seasons this driver won" endpoint, so it's computed once by walking every season instead of on every page load. Re-run it once a season, after the finale:
+
+```bash
+node scripts/generate-champions.mjs
+```
 
 ## Author
 

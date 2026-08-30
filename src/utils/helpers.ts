@@ -9,6 +9,7 @@ export const getTeamHex = (constructorId: string): string => {
     williams: "#64C4FF",
     rb: "#6692FF",
     kick_sauber: "#52E252",
+    audi: "#52E252",
     haas: "#B6BABD",
     alphatauri: "#041F3D",
     alpha_tauri: "#041F3D",
@@ -71,24 +72,23 @@ export const getTeamHex = (constructorId: string): string => {
   return colors[constructorId] || "#525252";
 };
 
-export const getTeamLogo = (constructorId: string): string | null => {
-  const slugMap: Record<string, string> = {
-    red_bull: "red-bull-racing",
-    ferrari: "ferrari",
-    mercedes: "mercedes",
-    mclaren: "mclaren",
-    aston_martin: "aston-martin",
-    alpine: "alpine",
-    williams: "williams",
-    rb: "rb",
-    kick_sauber: "kick-sauber",
-    haas: "haas-f1-team",
-  };
-  if (slugMap[constructorId]) {
-    return `https://media.formula1.com/content/dam/fom-website/teams/2025/${slugMap[constructorId]}-logo.png.transform/2col/image.png`;
-  }
-  return null;
-};
+// Self-hosted (public/logos/*.png) so team renames/CDN reshuffles at
+// formula1.com can't 404 these.
+const LOGO_IDS = new Set([
+  "red_bull",
+  "ferrari",
+  "mercedes",
+  "mclaren",
+  "aston_martin",
+  "alpine",
+  "williams",
+  "rb",
+  "audi",
+  "haas",
+]);
+
+export const getTeamLogo = (constructorId: string): string | null =>
+  LOGO_IDS.has(constructorId) ? `/logos/${constructorId}.png` : null;
 
 export const getCircuitData = (
   circuitId: string

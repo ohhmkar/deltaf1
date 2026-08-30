@@ -1,21 +1,16 @@
 import React from "react";
+import { NavLink } from "react-router";
 import { useTheme } from "../../context/ThemeContext";
 
-interface NavbarProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-}
-
-export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
+export const Navbar: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
 
   const navItems = [
-    { id: "dashboard", icon: "fa-chart-pie", label: "Dashboard" },
-    { id: "standings", icon: "fa-list", label: "Standings" },
-    { id: "season", icon: "fa-calendar", label: "Calendar" },
-    { id: "grid", icon: "fa-th", label: "The Grid" },
-    { id: "telemetry", icon: "fa-chart-line", label: "Telemetry" },
-    { id: "replay", icon: "fa-circle-play", label: "Replay" },
+    { to: "/", icon: "fa-chart-pie", label: "Dashboard" },
+    { to: "/standings", icon: "fa-list", label: "Standings" },
+    { to: "/season", icon: "fa-calendar", label: "Calendar" },
+    { to: "/grid", icon: "fa-th", label: "The Grid" },
+    { to: "/replay", icon: "fa-circle-play", label: "Replay" },
   ];
 
   return (
@@ -31,14 +26,17 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
 
       <div className="flex md:flex-col justify-around w-full md:w-full flex-1 md:justify-center md:space-y-2 px-2">
         {navItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setActiveTab(item.id)}
-            className={`flex items-center justify-center md:justify-start w-10 md:w-full h-10 md:h-12 rounded-md transition-all duration-200 md:px-3 overflow-hidden ${
-              activeTab === item.id
-                ? "text-white light:text-neutral-900 bg-neutral-800 light:bg-neutral-200"
-                : "text-neutral-500 light:text-neutral-400 hover:text-neutral-300 light:hover:text-neutral-700 hover:bg-neutral-900/50 light:hover:bg-neutral-100"
-            }`}
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === "/"}
+            className={({ isActive }) =>
+              `flex items-center justify-center md:justify-start w-10 md:w-full h-10 md:h-12 rounded-md transition-all duration-200 md:px-3 overflow-hidden ${
+                isActive
+                  ? "text-white light:text-neutral-900 bg-neutral-800 light:bg-neutral-200"
+                  : "text-neutral-500 light:text-neutral-400 hover:text-neutral-300 light:hover:text-neutral-700 hover:bg-neutral-900/50 light:hover:bg-neutral-100"
+              }`
+            }
           >
             <div className="w-6 flex justify-center shrink-0">
               <i className={`fas ${item.icon} text-sm`}></i>
@@ -46,7 +44,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
             <span className="hidden md:block ml-3 text-sm font-medium whitespace-nowrap opacity-0 -translate-x-2 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 delay-100">
               {item.label}
             </span>
-          </button>
+          </NavLink>
         ))}
       </div>
 
@@ -63,19 +61,19 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
           <div className="w-6 flex justify-center shrink-0">
             <i
               className={`fas ${
-                theme === "dark" ? "fa-sun" : "fa-moon"
+                theme === "dark" ? "fa-moon" : "fa-sun"
               } text-sm`}
             ></i>
           </div>
           <span className="hidden md:block ml-3 text-sm font-medium whitespace-nowrap opacity-0 -translate-x-2 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 delay-100">
-            {theme === "dark" ? "Light Mode" : "Dark Mode"}
+            {theme === "dark" ? "Dark Mode" : "Light Mode"}
           </span>
         </button>
 
         {/* Version */}
         <div className="text-neutral-600 light:text-neutral-400 text-[10px] font-mono group-hover:text-neutral-500">
           <span className="group-hover:hidden transition-opacity duration-300">
-            v1.3
+            v{__APP_VERSION__}
           </span>
           <span className="hidden group-hover:inline opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-150">
             {"<3 by ohhmkar"}
