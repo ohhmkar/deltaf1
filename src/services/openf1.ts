@@ -7,8 +7,7 @@ const BASE = "https://api.openf1.org/v1";
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // OpenF1's free tier rate-limits bursts, so requests run through a single
-// queue (spaced out) and retry on 429. ponytail: serial is plenty fast here
-// since responses are cached after first load.
+// queue (spaced out) and retry on 429. 
 let queue: Promise<unknown> = Promise.resolve();
 
 async function rawGet<T>(path: string): Promise<T> {

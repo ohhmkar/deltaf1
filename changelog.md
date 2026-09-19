@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Sun 30/08/26 Ver 1.6.2
+
+- Fixed generate-champions.mjs counting the current in-progress season's points leader as a champion (e.g. Antonelli showed 1 title while just leading 2026, not having won it) - now checks the season actually completed its full race schedule before crediting a title
+
 ## Sun 30/08/26 Ver 1.6.1
 
 - Grid and Standings sub-tabs are now nested routes (`/grid/drivers`, `/grid/teams`, `/standings/constructors`, `/standings/teammate`) instead of local `useState` - deep-linkable and back-button-able

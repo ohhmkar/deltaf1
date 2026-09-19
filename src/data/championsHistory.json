@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-30T00:52:56.651Z",
+  "generatedAt": "2026-08-30T11:37:05.095Z",
   "drivers": {
     "farina": 1,
     "fangio": 5,
@@ -35,8 +35,7 @@
     "vettel": 4,
     "rosberg": 1,
     "max_verstappen": 4,
-    "norris": 1,
-    "antonelli": 1
+    "norris": 1
   },
   "constructors": {
     "vanwall": 1,
@@ -55,6 +54,6 @@
     "renault": 2,
     "brawn": 1,
     "red_bull": 6,
-    "mercedes": 9
+    "mercedes": 8
   }
 }
