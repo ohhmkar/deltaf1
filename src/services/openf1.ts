@@ -122,3 +122,12 @@ export const fetchLocations = (
       (driver ? `&driver_number=${driver}` : "") +
       `&date>${from.toISOString()}&date<${to.toISOString()}`
   );
+
+export interface OF1Lap {
+  driver_number: number;
+  lap_number: number;
+  date_start: string | null; // null on some lap-1 rows
+}
+
+export const fetchLaps = (sessionKey: number) =>
+  get<OF1Lap[]>(`/laps?session_key=${sessionKey}`);

@@ -5,6 +5,8 @@ type Theme = "dark" | "light";
 interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
+  spoilerFree: boolean;
+  toggleSpoilerFree: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -41,12 +43,28 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [theme]);
 
+  // ponytail: lives here with theme since both are per-viewer display prefs
+  const [spoilerFree, setSpoilerFree] = useState(() => {
+    try {
+      return localStorage.getItem("deltaf1-spoiler-free") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const toggleSpoilerFree = () =>
+    setSpoilerFree((v) => {
+      try {
+        localStorage.setItem("deltaf1-spoiler-free", v ? "0" : "1");
+      } catch {}
+      return !v;
+    });
+
   const toggleTheme = () => {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, spoilerFree, toggleSpoilerFree }}>
       {children}
     </ThemeContext.Provider>
   );

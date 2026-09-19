@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { fetchData } from "../../services/api";
 import { getTeamHex, formatDateLocal } from "../../utils/helpers";
-import { TeamLogo, Flag, SkeletonCard, SkeletonList } from "../shared";
+import { TeamLogo, Flag, SkeletonCard, SkeletonList, Spoiler } from "../shared";
 import type { Race, DriverStanding, ConstructorStanding } from "../../types";
 
 export const Dashboard: React.FC = () => {
@@ -454,6 +454,7 @@ export const Dashboard: React.FC = () => {
                 <h3 className="text-xl font-medium text-white mb-6">
                   {lastRace.raceName}
                 </h3>
+                <Spoiler>
                 <div className="space-y-4">
                   {lastRace.Results.slice(0, 3).map((res) => (
                     <div
@@ -546,6 +547,7 @@ export const Dashboard: React.FC = () => {
                     </div>
                   ))}
                 </div>
+                </Spoiler>
               </div>
             ) : (
               <div className="text-neutral-500 text-sm">No data available</div>

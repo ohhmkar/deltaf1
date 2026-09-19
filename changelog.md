@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## Sat 19/09/26 Ver 1.7
+
+- Replay: click two drivers in the running order to compare them - shows the live gap between them and rings their cars on the map
+- Replay: keyboard controls - Space play/pause, ←/→ jump to previous/next lap (real lap starts from OpenF1 `/laps`, which also makes the lap counter accurate), 1–5 playback speed
+- Replay: shareable moments - the URL tracks year + race, and the link button copies `/replay?year=&race=&t=` to open that race at that second
+- Spoiler-free mode (eye icon in the navbar, remembered per browser): blurs Dashboard's previous-race podium and Season's results/fastest lap behind click-to-reveal, and hides race-control messages that haven't happened yet in Replay
+- Open Graph / Twitter tags + `public/og.png` so shared links unfurl with a preview card
+
 ## Sun 30/08/26 Ver 1.6.2
 
 - Fixed generate-champions.mjs counting the current in-progress season's points leader as a champion (e.g. Antonelli showed 1 title while just leading 2026, not having won it) - now checks the season actually completed its full race schedule before crediting a title

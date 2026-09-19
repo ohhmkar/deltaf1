@@ -3,7 +3,7 @@ import { NavLink } from "react-router";
 import { useTheme } from "../../context/ThemeContext";
 
 export const Navbar: React.FC = () => {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, spoilerFree, toggleSpoilerFree } = useTheme();
 
   const navItems = [
     { to: "/", icon: "fa-chart-pie", label: "Dashboard" },
@@ -50,6 +50,25 @@ export const Navbar: React.FC = () => {
 
       {/* Theme Toggle & Version */}
       <div className="hidden md:flex flex-col items-center w-full space-y-4 px-2">
+        {/* Spoiler-free Toggle */}
+        <button
+          onClick={toggleSpoilerFree}
+          aria-pressed={spoilerFree}
+          className={`flex items-center justify-center md:justify-start w-10 md:w-full h-10 md:h-10 rounded-md transition-all duration-200 md:px-3 overflow-hidden hover:bg-neutral-900/50 light:hover:bg-neutral-100 ${
+            spoilerFree
+              ? "text-red-400"
+              : "text-neutral-500 light:text-neutral-400 hover:text-neutral-300 light:hover:text-neutral-700"
+          }`}
+          title={spoilerFree ? "Show race results" : "Hide race results (spoiler-free)"}
+        >
+          <div className="w-6 flex justify-center shrink-0">
+            <i className={`fas ${spoilerFree ? "fa-eye-slash" : "fa-eye"} text-sm`}></i>
+          </div>
+          <span className="hidden md:block ml-3 text-sm font-medium whitespace-nowrap opacity-0 -translate-x-2 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 delay-100">
+            {spoilerFree ? "Spoilers Hidden" : "Spoilers Shown"}
+          </span>
+        </button>
+
         {/* Theme Toggle Button */}
         <button
           onClick={toggleTheme}
@@ -80,6 +99,18 @@ export const Navbar: React.FC = () => {
           </span>
         </div>
       </div>
+
+      {/* Mobile Spoiler-free Toggle */}
+      <button
+        onClick={toggleSpoilerFree}
+        aria-pressed={spoilerFree}
+        className={`md:hidden flex items-center justify-center w-10 h-10 rounded-md transition-all duration-200 ${
+          spoilerFree ? "text-red-400" : "text-neutral-500 light:text-neutral-400"
+        }`}
+        title={spoilerFree ? "Show race results" : "Hide race results (spoiler-free)"}
+      >
+        <i className={`fas ${spoilerFree ? "fa-eye-slash" : "fa-eye"} text-sm`}></i>
+      </button>
 
       {/* Mobile Theme Toggle */}
       <button

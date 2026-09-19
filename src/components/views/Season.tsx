@@ -5,7 +5,7 @@ import {
   getCircuitData,
   formatDateLocal,
 } from "../../utils/helpers";
-import { Flag } from "../shared";
+import { Flag, Spoiler } from "../shared";
 import type { Race, PitStop } from "../../types";
 
 export const Season: React.FC = () => {
@@ -152,6 +152,7 @@ export const Season: React.FC = () => {
               </div>
 
               {/* Fastest Lap Card */}
+              <Spoiler>
               {(() => {
                 const fl = raceDetails.Results?.find(
                   (r) => r.FastestLap?.rank === "1"
@@ -197,6 +198,7 @@ export const Season: React.FC = () => {
                   </div>
                 );
               })()}
+              </Spoiler>
             </div>
 
             {/* Detailed Results List */}
@@ -204,6 +206,7 @@ export const Season: React.FC = () => {
               <h3 className="text-sm font-bold text-white uppercase tracking-wide mb-4">
                 Full Race Results
               </h3>
+              <Spoiler>
               <div className="space-y-3">
                 {raceDetails.Results?.map((res) => {
                   const grid = parseInt(res.grid);
@@ -325,6 +328,7 @@ export const Season: React.FC = () => {
                   );
                 })}
               </div>
+              </Spoiler>
             </div>
           </>
         ) : (

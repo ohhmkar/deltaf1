@@ -7,13 +7,18 @@ import {
   fetchPositions,
   fetchStints,
   fetchIntervals,
+  fetchLaps,
   OF1Session,
   OF1Driver,
   OF1Loc,
   OF1RaceControl,
   OF1Position,
   OF1Stint,
+  OF1Lap,
 } from "../../services/openf1";
+import { useSearchParams } from "react-router";
+import { useTheme } from "../../context/ThemeContext";
+import { useToast } from "../shared";
 
 const WINDOW_MS = 60_000; // location fetched in 60s chunks (~0.5MB each, all cars)
 const VIEW = 1000; // svg viewBox size
@@ -140,7 +145,20 @@ export const Replay: React.FC = () => {
   const year0 = new Date().getFullYear();
   const years = Array.from({ length: year0 - 2022 }, (_, i) => 2023 + i);
 
-  const [year, setYear] = useState(year0);
+  // ?year=&race=&t= makes a moment shareable; race/t are applied once, on load
+  const [params, setParams] = useSearchParams();
+  const pending = useRef(
+    params.get("race")
+      ? { race: Number(params.get("race")), t: Number(params.get("t")) || 0 }
+      : null
+  );
+  const { spoilerFree } = useTheme();
+  const { addToast } = useToast();
+
+  const yearParam = Number(params.get("year"));
+  const [year, setYear] = useState(
+    years.includes(yearParam) ? yearParam : year0
+  );
   const [sessions, setSessions] = useState<OF1Session[]>([]);
   const [session, setSession] = useState<OF1Session | null>(null);
   const [drivers, setDrivers] = useState<OF1Driver[]>([]);
@@ -154,6 +172,8 @@ export const Replay: React.FC = () => {
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [posByDriver, setPosByDriver] = useState<Map<number, Pos[]>>(new Map());
   const [stints, setStints] = useState<Map<number, OF1Stint[]>>(new Map());
+  const [lapStarts, setLapStarts] = useState<{ lap: number; t: number }[]>([]);
+  const [compare, setCompare] = useState<number[]>([]); // up to 2 driver numbers
   const [cursor, setCursor] = useState(0); // ms from race start
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(4);
@@ -190,6 +210,10 @@ export const Replay: React.FC = () => {
           .sort((a, b) => Date.parse(a.date_start) - Date.parse(b.date_start));
         setSessions(s);
         setStatus(s.length ? "" : "No completed races for this year yet.");
+        const p = pending.current;
+        pending.current = null;
+        const hit = p && s.find((x) => x.session_key === p.race);
+        if (hit) loadSession(hit, p!.t * 1000);
       })
       .catch(() => !cancel && setStatus("Failed to load races."));
     return () => {
@@ -198,11 +222,16 @@ export const Replay: React.FC = () => {
   }, [year]);
 
   // --- load a session: reset buffers, fetch drivers + track outline ---
-  const loadSession = async (s: OF1Session) => {
+  const loadSession = async (s: OF1Session, at = 0) => {
+    setParams({ year: String(year), race: String(s.session_key) }, { replace: true });
+    const start = Math.max(
+      0,
+      Math.min(at, Date.parse(s.date_end) - Date.parse(s.date_start))
+    );
     setSession(s);
     setPlaying(false);
-    setCursor(0);
-    cursorRef.current = 0;
+    setCursor(start);
+    cursorRef.current = start;
     points.current = new Map();
     loaded.current = new Set();
     inflight.current = new Set();
@@ -214,9 +243,11 @@ export const Replay: React.FC = () => {
     setFeed([]);
     setPosByDriver(new Map());
     setStints(new Map());
+    setLapStarts([]);
+    setCompare([]);
     setStatus("Loading track…");
     try {
-      const [drv, outline, rc, pos, st] = await Promise.all([
+      const [drv, outline, rc, pos, st, laps] = await Promise.all([
         fetchDrivers(s.session_key),
         // first 3 min of one car traces the whole circuit (ponytail: cheap map)
         fetchLocations(
@@ -228,6 +259,7 @@ export const Replay: React.FC = () => {
         fetchRaceControl(s.session_key).catch(() => [] as OF1RaceControl[]),
         fetchPositions(s.session_key).catch(() => [] as OF1Position[]),
         fetchStints(s.session_key).catch(() => [] as OF1Stint[]),
+        fetchLaps(s.session_key).catch(() => [] as OF1Lap[]),
       ]);
       setDrivers(drv);
       setFeed(
@@ -251,6 +283,19 @@ export const Replay: React.FC = () => {
       }
       for (const arr of sm.values()) arr.sort((a, b) => a.lap_start - b.lap_start);
       setStints(sm);
+      // a lap starts when the first car (the leader) starts it
+      const ls = new Map<number, number>();
+      for (const l of laps) {
+        if (!l.date_start) continue;
+        const t = Date.parse(l.date_start);
+        if (!ls.has(l.lap_number) || t < ls.get(l.lap_number)!)
+          ls.set(l.lap_number, t);
+      }
+      // ponytail: OpenF1 often has no lap-1 start; session start is close enough
+      if (ls.size && !ls.has(1)) ls.set(1, Date.parse(s.date_start));
+      setLapStarts(
+        [...ls].map(([lap, t]) => ({ lap, t })).sort((a, b) => a.lap - b.lap)
+      );
       const pts = outline.filter((p) => p.x || p.y);
       if (pts.length) {
         const xs = pts.map((p) => p.x),
@@ -366,10 +411,13 @@ export const Replay: React.FC = () => {
     return () => cancelAnimationFrame(raf);
   }, [playing, speed, duration]);
 
-  const scrub = (v: number) => {
-    setPlaying(false);
+  const seek = (v: number) => {
     cursorRef.current = v;
     setCursor(v);
+  };
+  const scrub = (v: number) => {
+    setPlaying(false);
+    seek(v);
   };
 
   const toggle3D = () => {
@@ -411,11 +459,65 @@ export const Replay: React.FC = () => {
     activeItemRef.current?.scrollIntoView({ block: "nearest" });
   }, [activeIdx]);
 
-  // lap count derived from race-control events (no extra fetch)
+  // lap from /laps; falls back to race-control lap numbers if that failed
   let currentLap = 0;
-  for (let i = 0; i <= activeIdx; i++)
-    if (feed[i].lap_number) currentLap = feed[i].lap_number!;
-  const totalLaps = feed.reduce((m, e) => Math.max(m, e.lap_number || 0), 0);
+  let totalLaps = 0;
+  if (lapStarts.length) {
+    for (const l of lapStarts) if (l.t <= absT) currentLap = l.lap;
+    totalLaps = lapStarts[lapStarts.length - 1].lap;
+  } else {
+    for (let i = 0; i <= activeIdx; i++)
+      if (feed[i].lap_number) currentLap = feed[i].lap_number!;
+    totalLaps = feed.reduce((m, e) => Math.max(m, e.lap_number || 0), 0);
+  }
+
+  // jump to the start of the next/previous lap (±60s without lap data)
+  const stepLap = (dir: 1 | -1) => {
+    const clamp = (v: number) => Math.max(0, Math.min(duration, v));
+    if (!lapStarts.length) return seek(clamp(cursor + dir * 60_000));
+    const target = lapStarts.find((l) => l.lap === currentLap + dir);
+    if (target) seek(clamp(target.t - startMs));
+    else if (dir < 0) seek(0);
+  };
+
+  // Space play/pause, ←/→ lap, 1–5 speed. Ref keeps the listener stable while
+  // the handler sees fresh state every frame.
+  const onKey = useRef<(e: KeyboardEvent) => void>(() => {});
+  onKey.current = (e) => {
+    if (!session || e.metaKey || e.ctrlKey || e.altKey) return;
+    const el = e.target as HTMLElement;
+    if (
+      el.tagName === "SELECT" ||
+      el.tagName === "TEXTAREA" ||
+      (el.tagName === "INPUT" && (el as HTMLInputElement).type !== "range")
+    )
+      return;
+    if (e.key === " ") {
+      e.preventDefault();
+      setPlaying((p) => !p);
+    } else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+      e.preventDefault();
+      stepLap(e.key === "ArrowRight" ? 1 : -1);
+    } else if (/^[1-5]$/.test(e.key)) {
+      setSpeed(SPEEDS[Number(e.key) - 1]);
+    }
+  };
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => onKey.current(e);
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, []);
+
+  const share = async () => {
+    if (!session) return;
+    const url = `${location.origin}/replay?year=${year}&race=${session.session_key}&t=${Math.floor(cursor / 1000)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      addToast("Link to this moment copied", "success");
+    } catch {
+      addToast(url, "info", 8000);
+    }
+  };
 
   // a window we've actually loaded lets us trust "no data" as a retirement signal
   const curWindowLoaded = loaded.current.has(Math.floor(cursor / WINDOW_MS));
@@ -447,6 +549,29 @@ export const Replay: React.FC = () => {
     .filter((r): r is { d: OF1Driver; pos: number } => r.pos != null)
     .sort((a, b) => a.pos - b.pos);
 
+  // head-to-head gap between the two picked drivers, from gap-to-leader
+  const toggleCompare = (n: number) =>
+    setCompare((c) =>
+      c.includes(n) ? c.filter((x) => x !== n) : [...c, n].slice(-2)
+    );
+  const duel = (() => {
+    if (compare.length !== 2) return null;
+    const rows = order.filter((r) => compare.includes(r.d.driver_number));
+    if (rows.length !== 2) return null; // one of them isn't classified right now
+    const [a, b] = rows; // order is sorted, so a is ahead
+    const g = (r: (typeof rows)[number]) =>
+      r.pos === 1 ? 0 : gapAt(gaps.current.get(r.d.driver_number) || [], absT);
+    const ga = g(a),
+      gb = g(b);
+    const label =
+      ga == null || gb == null
+        ? "—"
+        : typeof ga === "number" && typeof gb === "number"
+          ? `+${Math.max(0, gb - ga).toFixed(1)}s`
+          : "lapped";
+    return { a: a.d, b: b.d, label };
+  })();
+
   // current tyre stint for a driver at the current lap
   const stintFor = (num: number) => {
     const arr = stints.get(num);
@@ -464,13 +589,17 @@ export const Replay: React.FC = () => {
       </h1>
       <p className="text-neutral-500 text-sm mb-6">
         Watch any race from 2023 onwards play out on track. Data: OpenF1.
+        {spoilerFree && " Spoiler-free: upcoming race-control messages are hidden."}
       </p>
 
       {/* pickers */}
       <div className="flex flex-wrap gap-3 mb-6">
         <select
           value={year}
-          onChange={(e) => setYear(Number(e.target.value))}
+          onChange={(e) => {
+            setYear(Number(e.target.value));
+            setParams({ year: e.target.value }, { replace: true });
+          }}
           className="bg-neutral-900 light:bg-white border border-neutral-800 light:border-neutral-300 rounded-md px-3 py-2 text-sm text-neutral-200 light:text-neutral-800"
         >
           {years.map((y) => (
@@ -564,8 +693,8 @@ export const Replay: React.FC = () => {
                     cy={cy}
                     r={13}
                     fill={`#${d.team_colour || "888888"}`}
-                    stroke="#000"
-                    strokeWidth={2}
+                    stroke={compare.includes(d.driver_number) ? "#fff" : "#000"}
+                    strokeWidth={compare.includes(d.driver_number) ? 5 : 2}
                   />
                   <text
                     x={cx}
@@ -586,6 +715,7 @@ export const Replay: React.FC = () => {
           <div className="mt-4 flex items-center gap-3">
             <button
               onClick={() => setPlaying((p) => !p)}
+              aria-label={playing ? "Pause" : "Play"}
               className="w-10 h-10 shrink-0 rounded-full bg-white light:bg-neutral-900 text-black light:text-white flex items-center justify-center"
             >
               <i className={`fas ${playing ? "fa-pause" : "fa-play"}`}></i>
@@ -612,7 +742,18 @@ export const Replay: React.FC = () => {
                 </option>
               ))}
             </select>
+            <button
+              onClick={share}
+              title="Copy link to this moment"
+              aria-label="Copy link to this moment"
+              className="w-9 h-9 shrink-0 rounded-md bg-neutral-900 light:bg-white border border-neutral-800 light:border-neutral-300 text-neutral-300 light:text-neutral-700 hover:text-white light:hover:text-neutral-900 flex items-center justify-center"
+            >
+              <i className="fas fa-link text-xs"></i>
+            </button>
           </div>
+          <p className="hidden md:block mt-2 text-[11px] text-neutral-600 light:text-neutral-400">
+            Space play/pause · ←/→ previous/next lap · 1–5 speed
+          </p>
           </div>
 
           {/* right column: position tower + race control feed */}
@@ -620,9 +761,35 @@ export const Replay: React.FC = () => {
 
           {/* position tower (order from /position, tyre from /stints) */}
           <div className="bg-neutral-950 light:bg-white border border-neutral-800 light:border-neutral-200 rounded-xl flex flex-col">
-            <div className="px-4 py-3 border-b border-neutral-800 light:border-neutral-200 text-sm font-semibold text-white light:text-neutral-900">
-              Running Order
+            <div className="px-4 py-3 border-b border-neutral-800 light:border-neutral-200 flex items-baseline justify-between">
+              <span className="text-sm font-semibold text-white light:text-neutral-900">
+                Running Order
+              </span>
+              <span className="text-[10px] text-neutral-500">
+                {compare.length ? (
+                  <button onClick={() => setCompare([])} className="hover:text-neutral-300">
+                    clear
+                  </button>
+                ) : (
+                  "pick 2 to compare"
+                )}
+              </span>
             </div>
+            {duel && (
+              <div className="px-4 py-3 border-b border-neutral-800 light:border-neutral-200 flex items-center justify-between text-sm">
+                <span className="flex items-center gap-2 font-semibold text-neutral-200 light:text-neutral-800">
+                  <span className="w-1 h-4 rounded-full" style={{ backgroundColor: `#${duel.a.team_colour || "888888"}` }} />
+                  {duel.a.name_acronym}
+                </span>
+                <span className="font-mono tabular-nums text-white light:text-neutral-900 font-bold">
+                  {duel.label}
+                </span>
+                <span className="flex items-center gap-2 font-semibold text-neutral-200 light:text-neutral-800">
+                  {duel.b.name_acronym}
+                  <span className="w-1 h-4 rounded-full" style={{ backgroundColor: `#${duel.b.team_colour || "888888"}` }} />
+                </span>
+              </div>
+            )}
             {order.length === 0 ? (
               <p className="p-4 text-neutral-500 text-sm">No position data.</p>
             ) : (
@@ -635,9 +802,13 @@ export const Replay: React.FC = () => {
                       ? "LEADER"
                       : gapLabel(gapAt(gaps.current.get(d.driver_number) || [], absT));
                   return (
-                    <li
-                      key={d.driver_number}
-                      className="flex items-center gap-2 px-2 py-1.5 text-sm"
+                    <li key={d.driver_number}>
+                      <button
+                      onClick={() => toggleCompare(d.driver_number)}
+                      aria-pressed={compare.includes(d.driver_number)}
+                      className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-left hover:bg-neutral-800/60 light:hover:bg-neutral-100 ${
+                        compare.includes(d.driver_number) ? "bg-neutral-800 light:bg-neutral-200" : ""
+                      }`}
                     >
                       <span className="w-5 text-right text-neutral-500 light:text-neutral-400 font-mono text-xs tabular-nums">
                         {pos}
@@ -665,6 +836,7 @@ export const Replay: React.FC = () => {
                           </span>
                         </span>
                       )}
+                      </button>
                     </li>
                   );
                 })}
@@ -683,6 +855,7 @@ export const Replay: React.FC = () => {
               <ul className="overflow-y-auto p-2 space-y-1 max-h-[40vh] lg:max-h-[600px]">
                 {feed.map((e, i) => {
                   const past = i <= activeIdx;
+                  if (spoilerFree && !past) return null;
                   return (
                     <li
                       key={i}
