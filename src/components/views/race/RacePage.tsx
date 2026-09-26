@@ -92,12 +92,66 @@ export const RacePage: React.FC<{
             </div>
           </header>
 
-          <Spoiler>
-            <Podium results={raceDetails.Results ?? []} />
+          {/* everything that gives the result away sits under one cover */}
+          <Spoiler tall>
+            <div className="space-y-8 mb-12">
+              <Podium results={raceDetails.Results ?? []} />
+              {(() => {
+                const fl = raceDetails.Results?.find(
+                  (r) => r.FastestLap?.rank === "1"
+                );
+                if (fl && fl.FastestLap) {
+                  return (
+                    <div className="minimal-card p-6 flex flex-col justify-center bg-neutral-900/20 border-l-4 border-l-purple-500 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                        <i className="fas fa-stopwatch text-6xl"></i>
+                      </div>
+                      <div className="text-purple-400 font-bold uppercase tracking-wider text-xs mb-2">
+                        Fastest Lap
+                      </div>
+                      <div className="text-4xl font-mono text-white tracking-tighter mb-4">
+                        {fl.FastestLap.Time.time}
+                      </div>
+                      <div className="flex items-center">
+                        <div
+                          className="w-1 h-8 rounded-full mr-3"
+                          style={{
+                            backgroundColor: getTeamHex(
+                              fl.Constructor.constructorId
+                            ),
+                          }}
+                        ></div>
+                        <div>
+                          <div className="font-bold text-white text-lg">
+                            {fl.Driver.givenName} {fl.Driver.familyName}
+                          </div>
+                          <div className="text-xs text-neutral-500 flex items-center space-x-2">
+                            <span>{fl.Constructor.name}</span>
+                            <span>•</span>
+                            <span>Lap {fl.FastestLap.lap}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="minimal-card p-6 flex items-center justify-center text-neutral-500">
+                    Fastest lap data unavailable
+                  </div>
+                );
+              })()}
+              <section>
+                <h3 className="text-sm font-bold text-white uppercase tracking-wide mb-4">
+                  Full Race Results
+                </h3>
+                <ResultsTable results={raceDetails.Results ?? []} stopsByDriver={stopsByDriver} />
+              </section>
+            </div>
           </Spoiler>
 
-          {/* Track Info Card */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Circuit */}
+          <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
             <div className="minimal-card p-0 overflow-hidden relative group h-64 md:h-auto">
               {circuitData.img ? (
                 <div className="absolute inset-0 bg-white p-4 flex items-center justify-center">
@@ -131,66 +185,7 @@ export const RacePage: React.FC<{
                 </div>
               </div>
             </div>
-
-            {/* Fastest Lap Card */}
-            <Spoiler>
-            {(() => {
-              const fl = raceDetails.Results?.find(
-                (r) => r.FastestLap?.rank === "1"
-              );
-              if (fl && fl.FastestLap) {
-                return (
-                  <div className="minimal-card p-6 flex flex-col justify-center bg-neutral-900/20 border-l-4 border-l-purple-500 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
-                      <i className="fas fa-stopwatch text-6xl"></i>
-                    </div>
-                    <div className="text-purple-400 font-bold uppercase tracking-wider text-xs mb-2">
-                      Fastest Lap
-                    </div>
-                    <div className="text-4xl font-mono text-white tracking-tighter mb-4">
-                      {fl.FastestLap.Time.time}
-                    </div>
-                    <div className="flex items-center">
-                      <div
-                        className="w-1 h-8 rounded-full mr-3"
-                        style={{
-                          backgroundColor: getTeamHex(
-                            fl.Constructor.constructorId
-                          ),
-                        }}
-                      ></div>
-                      <div>
-                        <div className="font-bold text-white text-lg">
-                          {fl.Driver.givenName} {fl.Driver.familyName}
-                        </div>
-                        <div className="text-xs text-neutral-500 flex items-center space-x-2">
-                          <span>{fl.Constructor.name}</span>
-                          <span>•</span>
-                          <span>Lap {fl.FastestLap.lap}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-              return (
-                <div className="minimal-card p-6 flex items-center justify-center text-neutral-500">
-                  Fastest lap data unavailable
-                </div>
-              );
-            })()}
-            </Spoiler>
-          </div>
-
-          {/* Detailed Results List */}
-          <div className="mb-12">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wide mb-4">
-              Full Race Results
-            </h3>
-            <Spoiler>
-              <ResultsTable results={raceDetails.Results ?? []} stopsByDriver={stopsByDriver} />
-            </Spoiler>
-          </div>
+          </section>
         </>
       ) : (
         <div className="text-center py-12 text-neutral-500 flex flex-col items-center">
