@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## Sat 26/09/26 Ver 1.8
+
+- New race weekend page (open a race from Season): podium, compact results table, race-at-a-glance facts, qualifying/sprint/race tabs, championship after the round, circuit history, and OpenF1 analysis tabs (tyre strategy, lap chart, pit stops)
+- Upcoming races get a preview: schedule, countdown and last year's podium
+- Broadcast-style redesign with Titillium Web, sticky header and previous/next race navigation
+- Shared `Tabs` component with arrow-key navigation
+- OpenF1 live-session lockout is detected (including browsers where the 401 shows up as a CORS error) and explained with the live session's name and an estimate of when access returns
+- Season calendar state in the URL (`?year=&round=`), cross-page links, accessibility and light-mode fixes
+- Career wins/poles now come from the generated data plus the live current season, instead of hundreds of live requests
+- Fixed lapped cars showing a time gap instead of laps down, and circuit history colouring winners by the wrong team
+- Build now runs a strict typecheck; removed dead code; 4xx responses are no longer retried
+
 ## Sat 19/09/26 Ver 1.7
 
 - Replay: click two drivers in the running order to compare them - shows the live gap between them and rings their cars on the map
