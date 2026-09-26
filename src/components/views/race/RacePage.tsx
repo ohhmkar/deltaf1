@@ -5,7 +5,7 @@ import { getTeamHex, getCircuitImg } from "../../../utils/helpers";
 import { Flag, Spoiler, SkeletonCard } from "../../shared";
 import type { Race, PitStop } from "../../../types";
 import { Podium } from "./Podium";
-import { ResultsTable } from "./ResultsTable";
+import { Sessions } from "./Sessions";
 import { CircuitHistory } from "./CircuitHistory";
 import { PitStops } from "./PitStops";
 import { Championship } from "./Championship";
@@ -166,12 +166,13 @@ export const RacePage: React.FC<{
                   </div>
                 );
               })()}
-              <section>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wide mb-4">
-                  Full Race Results
-                </h3>
-                <ResultsTable results={raceDetails.Results ?? []} stopsByDriver={stopsByDriver} />
-              </section>
+              <Sessions
+                year={year}
+                round={round}
+                race={raceDetails.Results ?? []}
+                stopsByDriver={stopsByDriver}
+                hasSprint={!!races[idx]?.Sprint}
+              />
               <PitStops stops={pitStops} results={raceDetails.Results ?? []} />
               <Championship year={year} round={round} />
             </div>
