@@ -7,6 +7,7 @@ import type { Race, PitStop } from "../../../types";
 import { Podium } from "./Podium";
 import { ResultsTable } from "./ResultsTable";
 import { CircuitHistory } from "./CircuitHistory";
+import { PitStops } from "./PitStops";
 
 // One race weekend: /season?year=&round= (opened from the Calendar or a link).
 export const RacePage: React.FC<{
@@ -170,6 +171,7 @@ export const RacePage: React.FC<{
                 </h3>
                 <ResultsTable results={raceDetails.Results ?? []} stopsByDriver={stopsByDriver} />
               </section>
+              <PitStops stops={pitStops} results={raceDetails.Results ?? []} />
             </div>
           </Spoiler>
 
