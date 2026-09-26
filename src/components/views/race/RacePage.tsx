@@ -5,6 +5,7 @@ import { getTeamHex, getCircuitData } from "../../../utils/helpers";
 import { Flag, Spoiler, SkeletonCard } from "../../shared";
 import type { Race, PitStop } from "../../../types";
 import { Podium } from "./Podium";
+import { ResultsTable } from "./ResultsTable";
 
 // One race weekend: /season?year=&round= (opened from the Calendar or a link).
 export const RacePage: React.FC<{
@@ -36,6 +37,9 @@ export const RacePage: React.FC<{
       stale = true;
     };
   }, [year, round]);
+
+  const stopsByDriver: Record<string, number> = {};
+  for (const p of pitStops) stopsByDriver[p.driverId] = (stopsByDriver[p.driverId] || 0) + 1;
 
   const circuitData = raceDetails
     ? getCircuitData(raceDetails.Circuit.circuitId)
@@ -184,131 +188,7 @@ export const RacePage: React.FC<{
               Full Race Results
             </h3>
             <Spoiler>
-            <div className="space-y-3">
-              {raceDetails.Results?.map((res) => {
-                const grid = parseInt(res.grid);
-                const pos = parseInt(res.position);
-                const diff = grid === 0 ? 0 : grid - pos;
-                const isDNF =
-                  res.positionText === "R" ||
-                  res.positionText === "W" ||
-                  isNaN(pos);
-                const stops = pitStops.filter(
-                  (p) => p.driverId === res.Driver.driverId
-                ).length;
-                const hasFastestLap = res.FastestLap?.rank === "1";
-
-                return (
-                  <div
-                    key={res.position}
-                    className="minimal-card p-4 flex flex-col md:flex-row items-center justify-between hover:border-neutral-600 transition-colors bg-neutral-900/10 group"
-                  >
-                    <div className="flex items-center w-full md:w-auto mb-4 md:mb-0">
-                      <div className="flex-shrink-0 w-12 text-center font-mono text-xl font-bold text-neutral-500">
-                        {res.positionText}
-                      </div>
-                      <div
-                        className="w-1 h-10 rounded-full mx-4"
-                        style={{
-                          backgroundColor: getTeamHex(
-                            res.Constructor.constructorId
-                          ),
-                        }}
-                      ></div>
-                      <div>
-                        <div className="font-bold text-white text-lg flex items-center">
-                          {res.Driver.givenName} {res.Driver.familyName}
-                          <Flag
-                            country={res.Driver.nationality}
-                            className="ml-3 w-4 h-auto opacity-50 rounded-[1px]"
-                          />
-                        </div>
-                        <div className="text-sm text-neutral-400">
-                          {res.Constructor.name}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between w-full md:w-auto md:space-x-8 border-t md:border-t-0 border-neutral-800 pt-3 md:pt-0">
-                      {/* Time / Status */}
-                      <div className="text-center md:text-right min-w-[80px]">
-                        <div className="text-[10px] text-neutral-600 uppercase mb-0.5">
-                          Time
-                        </div>
-                        <div className="font-mono text-sm text-neutral-300">
-                          {isDNF ? (
-                            <span className="text-red-500">{res.status}</span>
-                          ) : (
-                            res.Time?.time || res.status
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Pts */}
-                      <div className="text-center md:text-right min-w-[40px]">
-                        <div className="text-[10px] text-neutral-600 uppercase mb-0.5">
-                          Pts
-                        </div>
-                        <div
-                          className={`font-mono text-sm font-bold ${
-                            parseInt(res.points) > 0
-                              ? "text-white"
-                              : "text-neutral-600"
-                          }`}
-                        >
-                          +{res.points}
-                        </div>
-                      </div>
-
-                      {/* Grid Change */}
-                      <div className="text-center md:text-right min-w-[40px]">
-                        <div className="text-[10px] text-neutral-600 uppercase mb-0.5">
-                          Grid
-                        </div>
-                        <div className="flex items-center justify-center md:justify-end space-x-1">
-                          <span className="text-neutral-500 font-mono text-xs">
-                            {grid === 0 ? "PL" : grid}
-                          </span>
-                          {!isDNF &&
-                            grid !== 0 &&
-                            (diff > 0 ? (
-                              <span className="text-green-500 font-mono text-xs" title={`Gained ${diff} places`}>
-                                ▲{diff}
-                              </span>
-                            ) : diff < 0 ? (
-                              <span className="text-red-500 font-mono text-xs" title={`Lost ${-diff} places`}>
-                                ▼{-diff}
-                              </span>
-                            ) : (
-                              <span className="text-neutral-700">-</span>
-                            ))}
-                        </div>
-                      </div>
-
-                      {/* Pit Stops */}
-                      <div className="text-center md:text-right min-w-[40px]">
-                        <div className="text-[10px] text-neutral-600 uppercase mb-0.5">
-                          Stops
-                        </div>
-                        <div className="text-sm font-mono text-neutral-400">
-                          {stops > 0 ? stops : "-"}
-                        </div>
-                      </div>
-
-                      {/* Badges */}
-                      <div className="w-8 flex justify-end">
-                        {hasFastestLap && (
-                          <i
-                            className="fas fa-stopwatch text-purple-500"
-                            title="Fastest Lap"
-                          ></i>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+              <ResultsTable results={raceDetails.Results ?? []} stopsByDriver={stopsByDriver} />
             </Spoiler>
           </div>
         </>
