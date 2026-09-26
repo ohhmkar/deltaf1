@@ -15,6 +15,8 @@ import {
   OF1Position,
   OF1Stint,
   OF1Lap,
+  isLiveLocked,
+  LIVE_LOCKED_MSG,
 } from "../../services/openf1";
 import { useSearchParams } from "react-router";
 import { useTheme } from "../../context/ThemeContext";
@@ -215,7 +217,9 @@ export const Replay: React.FC = () => {
           );
         if (hit) loadSession(hit, p!.t * 1000);
       })
-      .catch(() => !cancel && setStatus("Failed to load races."));
+      .catch((e) =>
+        !cancel && setStatus(isLiveLocked(e) ? LIVE_LOCKED_MSG : "Failed to load races.")
+      );
     return () => {
       cancel = true;
     };
@@ -312,8 +316,9 @@ export const Replay: React.FC = () => {
         setTrackPath(buildPath(pts, b));
       }
       setStatus(pts.length ? "" : "No location data for this race.");
-    } catch {
-      if (token === loadToken.current) setStatus("Failed to load session.");
+    } catch (e) {
+      if (token === loadToken.current)
+        setStatus(isLiveLocked(e) ? LIVE_LOCKED_MSG : "Failed to load session.");
     }
   };
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { fetchStints, type OF1Stint } from "../../../services/openf1";
+import { fetchStints, isLiveLocked, LIVE_LOCKED_MSG, type OF1Stint } from "../../../services/openf1";
 import { compound, getTeamHex } from "../../../utils/helpers";
 import type { RaceResult } from "../../../types";
 import { useOpenF1Session } from "./useOpenF1Session";
@@ -12,10 +12,10 @@ export const Strategy: React.FC<{ season: string; date: string; results: RaceRes
   results,
 }) => {
   const session = useOpenF1Session(season, date);
-  const [stints, setStints] = useState<Map<number, OF1Stint[]> | null>(null);
+  const [stints, setStints] = useState<Map<number, OF1Stint[]> | "locked" | null>(null);
 
   useEffect(() => {
-    if (!session) return;
+    if (!session || session === "locked") return;
     let stale = false;
     setStints(null);
     fetchStints(session.session_key)
@@ -26,7 +26,7 @@ export const Strategy: React.FC<{ season: string; date: string; results: RaceRes
         for (const arr of m.values()) arr.sort((a, b) => a.lap_start - b.lap_start);
         setStints(m);
       })
-      .catch(() => !stale && setStints(new Map()));
+      .catch((e) => !stale && setStints(isLiveLocked(e) ? "locked" : new Map()));
     return () => {
       stale = true;
     };
@@ -40,7 +40,9 @@ export const Strategy: React.FC<{ season: string; date: string; results: RaceRes
     <section>
       <h3 className="text-sm font-bold text-white uppercase tracking-wide mb-4">Tyre Strategy</h3>
       <div className="minimal-card p-5">
-        {!stints ? (
+        {session === "locked" || stints === "locked" ? (
+          <p className="text-sm text-neutral-500">{LIVE_LOCKED_MSG}</p>
+        ) : !stints ? (
           <div className="min-h-[300px] animate-pulse" />
         ) : !stints.size || !totalLaps ? (
           <p className="text-sm text-neutral-500">No tyre data for this race.</p>
