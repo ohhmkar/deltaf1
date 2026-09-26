@@ -3,6 +3,7 @@ import { fetchData } from "../../../services/api";
 import { getTeamHex } from "../../../utils/helpers";
 import type { RaceResult } from "../../../types";
 import { ResultsTable } from "./ResultsTable";
+import { Tabs } from "../../shared";
 
 type Tab = "race" | "qualifying" | "sprint";
 type QualiRow = RaceResult & { Q1?: string; Q2?: string; Q3?: string };
@@ -37,20 +38,8 @@ export const Sessions: React.FC<{
 
   return (
     <section>
-      <div className="flex items-center gap-1 mb-4" role="tablist">
-        {tabs.map(([t, label]) => (
-          <button
-            key={t}
-            role="tab"
-            aria-selected={tab === t}
-            onClick={() => setTab(t)}
-            className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-              tab === t ? "bg-neutral-800 text-white font-medium" : "text-neutral-500 hover:text-white"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="mb-4">
+        <Tabs label="Session" value={tab} onChange={setTab} options={tabs} />
       </div>
       {tab === "race" ? (
         <ResultsTable results={race} stopsByDriver={stopsByDriver} />

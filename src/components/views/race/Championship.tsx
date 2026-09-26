@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchData } from "../../../services/api";
 import { getTeamHex } from "../../../utils/helpers";
+import { Tabs } from "../../shared";
 
 type Kind = "driver" | "constructor";
 type Row = { id: string; name: string; team: string; pos: number; pts: number };
@@ -40,28 +41,22 @@ export const Championship: React.FC<{ year: number; round: string }> = ({ year, 
     };
   }, [year, round, kind]);
 
-  const tab = (k: Kind, label: string) => (
-    <button
-      onClick={() => setKind(k)}
-      aria-pressed={kind === k}
-      className={`px-2 py-1 rounded text-xs ${
-        kind === k ? "bg-neutral-800 text-white" : "text-neutral-500 hover:text-white"
-      }`}
-    >
-      {label}
-    </button>
-  );
-
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-white uppercase tracking-wide">
           Championship after this round
         </h3>
-        <div className="flex gap-1">
-          {tab("driver", "Drivers")}
-          {tab("constructor", "Teams")}
-        </div>
+        <Tabs
+          label="Standings"
+          size="sm"
+          value={kind}
+          onChange={setKind}
+          options={[
+            ["driver", "Drivers"],
+            ["constructor", "Teams"],
+          ]}
+        />
       </div>
       <div className="minimal-card p-0 overflow-hidden">
         {failed ? (
