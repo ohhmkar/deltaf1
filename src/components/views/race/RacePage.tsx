@@ -9,6 +9,7 @@ import { Sessions } from "./Sessions";
 import { CircuitHistory } from "./CircuitHistory";
 import { PitStops } from "./PitStops";
 import { Championship } from "./Championship";
+import { Preview } from "./Preview";
 
 // One race weekend: /season?year=&round= (opened from the Calendar or a link).
 export const RacePage: React.FC<{
@@ -47,6 +48,8 @@ export const RacePage: React.FC<{
   for (const p of pitStops) stopsByDriver[p.driverId] = (stopsByDriver[p.driverId] || 0) + 1;
 
   const idx = races.findIndex((r) => r.round === round);
+  // results when the race has run; the calendar entry (schedule) otherwise
+  const info = raceDetails ?? races[idx] ?? null;
   const prev = idx > 0 ? races[idx - 1] : null;
   const next = idx >= 0 && idx < races.length - 1 ? races[idx + 1] : null;
   const navBtn =
@@ -88,27 +91,27 @@ export const RacePage: React.FC<{
             <SkeletonCard className="min-h-[220px]" />
           </div>
         </div>
-      ) : raceDetails ? (
+      ) : info ? (
         <>
           <header className="mb-8 border-b border-neutral-800 pb-6">
             <div className="text-xs font-mono text-neutral-500 uppercase mb-2">
-              Round {raceDetails.round} • {raceDetails.season}
+              Round {info.round} • {info.season}
             </div>
             <h1 className="text-3xl font-medium tracking-tight text-white mb-2">
-              {raceDetails.raceName}
+              {info.raceName}
             </h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-3 text-neutral-400 text-sm">
               <span className="flex items-center">
                 <Flag
-                  country={raceDetails.Circuit.Location.country}
+                  country={info.Circuit.Location.country}
                   className="w-4 h-auto mr-2 rounded shadow-sm"
                 />
-                {raceDetails.Circuit.circuitName}
+                {info.Circuit.circuitName}
               </span>
               {/* OpenF1 (Replay's source) covers 2023 on; matched by race date */}
-              {parseInt(raceDetails.season) >= 2023 && (
+              {parseInt(info.season) >= 2023 && (
                 <Link
-                  to={`/replay?year=${raceDetails.season}&date=${raceDetails.date}`}
+                  to={`/replay?year=${info.season}&date=${info.date}`}
                   className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-neutral-800 text-neutral-200 hover:bg-neutral-700 text-xs font-medium"
                 >
                   <i className="fas fa-circle-play"></i> Watch replay
@@ -118,6 +121,9 @@ export const RacePage: React.FC<{
           </header>
 
           {/* everything that gives the result away sits under one cover */}
+          {!raceDetails ? (
+            <Preview race={info} />
+          ) : (
           <Spoiler tall>
             <div className="space-y-8 mb-12">
               <Podium results={raceDetails.Results ?? []} />
@@ -177,16 +183,17 @@ export const RacePage: React.FC<{
               <Championship year={year} round={round} />
             </div>
           </Spoiler>
+          )}
 
           {/* Circuit */}
           <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
             <div className="minimal-card p-0 overflow-hidden relative h-64 md:h-auto min-h-[240px]">
-              {getCircuitImg(raceDetails.Circuit.circuitId) ? (
+              {getCircuitImg(info.Circuit.circuitId) ? (
                 <div className="absolute inset-0 bg-white p-4 flex items-center justify-center">
                   <img
-                    src={getCircuitImg(raceDetails.Circuit.circuitId)!}
+                    src={getCircuitImg(info.Circuit.circuitId)!}
                     className="max-w-full max-h-full object-contain mix-blend-multiply opacity-80"
-                    alt={`${raceDetails.Circuit.circuitName} layout`}
+                    alt={`${info.Circuit.circuitName} layout`}
                   />
                 </div>
               ) : (
@@ -195,17 +202,17 @@ export const RacePage: React.FC<{
                 </div>
               )}
               <div className="absolute bottom-0 inset-x-0 bg-neutral-900/90 backdrop-blur-md px-4 py-3 border-t border-neutral-800 text-xs text-neutral-300">
-                {raceDetails.Circuit.circuitName} · {raceDetails.Circuit.Location.locality},{" "}
-                {raceDetails.Circuit.Location.country}
+                {info.Circuit.circuitName} · {info.Circuit.Location.locality},{" "}
+                {info.Circuit.Location.country}
               </div>
             </div>
-            <CircuitHistory circuitId={raceDetails.Circuit.circuitId} before={raceDetails.date} />
+            <CircuitHistory circuitId={info.Circuit.circuitId} before={info.date} />
           </section>
         </>
       ) : (
         <div className="text-center py-12 text-neutral-500 flex flex-col items-center">
           <i className="fas fa-flag text-2xl mb-2 opacity-50"></i>
-          <p>Full race results not available yet.</p>
+          <p>Race not found.</p>
         </div>
       )}
     </div>

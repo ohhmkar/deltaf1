@@ -69,6 +69,8 @@ export const Season: React.FC = () => {
     };
   }, [year]);
 
+  const nextRound = races.find((r) => raceStart(r) > new Date())?.round;
+
   if (loading && !selectedRound)
     return (
       <div className="p-6 md:p-16 max-w-5xl mx-auto h-screen overflow-y-auto pb-24 space-y-4">
@@ -144,11 +146,8 @@ export const Season: React.FC = () => {
             <button
               key={r.round}
               onClick={() => openRace(r.round)}
-              disabled={!isPast}
-              className={`minimal-card w-full text-left p-6 flex flex-col md:flex-row items-start md:items-center justify-between ${
-                isPast
-                  ? "hover:bg-neutral-900/50 cursor-pointer transition-colors group"
-                  : "opacity-80"
+              className={`minimal-card w-full text-left p-6 flex flex-col md:flex-row items-start md:items-center justify-between hover:bg-neutral-900/50 cursor-pointer transition-colors group ${
+                isPast ? "" : "opacity-80 hover:opacity-100"
               }`}
             >
               <div className="flex items-center space-x-6 mb-4 md:mb-0">
@@ -222,9 +221,13 @@ export const Season: React.FC = () => {
                     <span className="text-[10px] bg-neutral-800 text-neutral-500 px-2 py-1 rounded font-bold group-hover:bg-neutral-700 transition-colors">
                       RESULTS
                     </span>
-                  ) : (
+                  ) : r.round === nextRound ? (
                     <span className="text-[10px] bg-white text-black px-2 py-1 rounded font-bold">
                       NEXT
+                    </span>
+                  ) : (
+                    <span className="text-[10px] border border-neutral-700 text-neutral-500 px-2 py-1 rounded font-bold">
+                      PREVIEW
                     </span>
                   )}
                 </div>
