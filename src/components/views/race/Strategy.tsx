@@ -33,13 +33,12 @@ export const Strategy: React.FC<{ season: string; date: string; results: RaceRes
     };
   }, [session]);
 
-  if (session === null) return null; // pre-2023 or not in OpenF1
+  if (session === null)
+    return <p className="minimal-card p-5 text-sm text-neutral-500">No OpenF1 data for this race.</p>;
   const totalLaps = parseInt(results[0]?.laps ?? "0");
   const used = new Set<string>();
 
   return (
-    <section>
-      <h3 className="text-sm font-bold text-white uppercase tracking-wide mb-4">Tyre Strategy</h3>
       <div className="minimal-card p-5">
         {session === "locked" || stints === "locked" ? (
           <LiveLockNotice />
@@ -100,6 +99,5 @@ export const Strategy: React.FC<{ season: string; date: string; results: RaceRes
           </>
         )}
       </div>
-    </section>
   );
 };

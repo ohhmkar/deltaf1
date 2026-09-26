@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { fetchData } from "../../../services/api";
-import { getCircuitImg } from "../../../utils/helpers";
+import { getCircuitImg, raceStart } from "../../../utils/helpers";
 import { Flag, Spoiler, SkeletonCard } from "../../shared";
 import type { Race, PitStop } from "../../../types";
 import { Podium } from "./Podium";
 import { Sessions } from "./Sessions";
 import { CircuitHistory } from "./CircuitHistory";
-import { PitStops } from "./PitStops";
 import { Championship } from "./Championship";
 import { Preview } from "./Preview";
-import { Strategy } from "./Strategy";
-import { LapChart } from "./LapChart";
+import { Analysis } from "./Analysis";
 import { AtAGlance } from "./AtAGlance";
 
 // One race weekend: /season?year=&round= (opened from the Calendar or a link).
@@ -56,134 +54,149 @@ export const RacePage: React.FC<{
   const prev = idx > 0 ? races[idx - 1] : null;
   const next = idx >= 0 && idx < races.length - 1 ? races[idx + 1] : null;
   const navBtn =
-    "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors min-w-0";
+    "flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors min-w-0";
+  const short = (name: string) => name.replace(" Grand Prix", " GP");
+  const img = info ? getCircuitImg(info.Circuit.circuitId) : null;
 
   return (
-    <div className="p-6 md:p-16 max-w-5xl mx-auto h-screen overflow-y-auto fade-in pb-24">
-      <div className="mb-6 flex items-center justify-between gap-2">
-        <button
-          onClick={onBack}
-          className="text-neutral-500 hover:text-white flex items-center transition-colors text-sm group shrink-0"
-        >
-          <i className="fas fa-arrow-left mr-2 group-hover:-translate-x-1 transition-transform"></i>{" "}
-          Calendar
-        </button>
-        <nav aria-label="Other races" className="flex items-center gap-1 min-w-0">
-          {prev && (
-            <button onClick={() => onGo(prev.round)} className={navBtn} title={prev.raceName}>
-              <i className="fas fa-chevron-left"></i>
-              <span className="truncate hidden sm:inline">{prev.raceName.replace(" Grand Prix", " GP")}</span>
-              <span className="sm:hidden">R{prev.round}</span>
-            </button>
+    <div className="h-screen overflow-y-auto fade-in pb-24">
+      {/* sticky bar: back + previous/next stay reachable while scrolling */}
+      <div className="sticky top-0 z-20 bg-[#0a0a0a]/85 light:bg-white/85 backdrop-blur-md border-b border-neutral-800">
+        <div className="max-w-5xl mx-auto px-4 md:px-8 h-12 flex items-center justify-between gap-2">
+          <button
+            onClick={onBack}
+            className="text-neutral-400 hover:text-white flex items-center gap-2 text-sm group shrink-0"
+          >
+            <i className="fas fa-arrow-left group-hover:-translate-x-0.5 transition-transform"></i>
+            Calendar
+          </button>
+          {info && (
+            <span className="hidden md:block text-xs text-neutral-500 truncate">
+              R{info.round} · {short(info.raceName)}
+            </span>
           )}
-          {next && (
-            <button onClick={() => onGo(next.round)} className={navBtn} title={next.raceName}>
-              <span className="truncate hidden sm:inline">{next.raceName.replace(" Grand Prix", " GP")}</span>
-              <span className="sm:hidden">R{next.round}</span>
-              <i className="fas fa-chevron-right"></i>
-            </button>
-          )}
-        </nav>
+          <nav aria-label="Other races" className="flex items-center gap-1 min-w-0">
+            {prev && (
+              <button onClick={() => onGo(prev.round)} className={navBtn} title={prev.raceName}>
+                <i className="fas fa-chevron-left"></i>
+                <span className="truncate hidden sm:inline">{short(prev.raceName)}</span>
+                <span className="sm:hidden">R{prev.round}</span>
+              </button>
+            )}
+            {next && (
+              <button onClick={() => onGo(next.round)} className={navBtn} title={next.raceName}>
+                <span className="truncate hidden sm:inline">{short(next.raceName)}</span>
+                <span className="sm:hidden">R{next.round}</span>
+                <i className="fas fa-chevron-right"></i>
+              </button>
+            )}
+          </nav>
+        </div>
       </div>
 
-      {loadingDetails ? (
-        <div className="space-y-6">
-          <SkeletonCard className="min-h-[120px]" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <SkeletonCard className="min-h-[220px]" />
-            <SkeletonCard className="min-h-[220px]" />
+      <div className="max-w-5xl mx-auto px-4 md:px-8 pt-8">
+        {loadingDetails ? (
+          <div className="space-y-6">
+            <SkeletonCard className="min-h-[120px]" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <SkeletonCard className="min-h-[160px]" />
+              <SkeletonCard className="min-h-[160px]" />
+              <SkeletonCard className="min-h-[160px]" />
+            </div>
+            <SkeletonCard className="min-h-[320px]" />
           </div>
-        </div>
-      ) : info ? (
-        <>
-          <header className="mb-8 border-b border-neutral-800 pb-6">
-            <div className="text-xs font-mono text-neutral-500 uppercase mb-2">
-              Round {info.round} • {info.season}
-            </div>
-            <h1 className="text-3xl font-medium tracking-tight text-white mb-2">
-              {info.raceName}
-            </h1>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-3 text-neutral-400 text-sm">
-              <span className="flex items-center">
-                <Flag
-                  country={info.Circuit.Location.country}
-                  className="w-4 h-auto mr-2 rounded shadow-sm"
-                />
-                {info.Circuit.circuitName}
-              </span>
-              {/* OpenF1 (Replay's source) covers 2023 on; matched by race date */}
-              {parseInt(info.season) >= 2023 && (
-                <Link
-                  to={`/replay?year=${info.season}&date=${info.date}`}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-neutral-800 text-neutral-200 hover:bg-neutral-700 text-xs font-medium"
-                >
-                  <i className="fas fa-circle-play"></i> Watch replay
-                </Link>
-              )}
-            </div>
-          </header>
+        ) : info ? (
+          <>
+            <header className="mb-8">
+              <div className="text-xs font-mono text-neutral-500 uppercase mb-2">
+                Round {info.round} · {info.season} ·{" "}
+                {raceStart(info).toLocaleDateString(undefined, {
+                  weekday: "short",
+                  day: "numeric",
+                  month: "short",
+                })}
+              </div>
+              <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-white mb-3">
+                {info.raceName}
+              </h1>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-3 text-neutral-400 text-sm">
+                <span className="flex items-center">
+                  <Flag country={info.Circuit.Location.country} className="w-4 h-auto mr-2 rounded shadow-sm" />
+                  {info.Circuit.circuitName} · {info.Circuit.Location.locality}
+                </span>
+                {/* OpenF1 (Replay's source) covers 2023 on; matched by race date */}
+                {raceDetails && parseInt(info.season) >= 2023 && (
+                  <Link
+                    to={`/replay?year=${info.season}&date=${info.date}`}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-red-600 text-white hover:bg-red-500 text-xs font-medium"
+                  >
+                    <i className="fas fa-circle-play"></i> Watch replay
+                  </Link>
+                )}
+              </div>
+            </header>
 
-          {/* everything that gives the result away sits under one cover */}
-          {!raceDetails ? (
-            <Preview race={info} />
-          ) : (
-          <Spoiler tall>
-            <div className="space-y-8 mb-12">
-              <Podium results={raceDetails.Results ?? []} />
-              <AtAGlance results={raceDetails.Results ?? []} stops={pitStops} />
-              <Sessions
-                year={year}
-                round={round}
-                race={raceDetails.Results ?? []}
-                stopsByDriver={stopsByDriver}
-                hasSprint={!!races[idx]?.Sprint}
-              />
-              <Strategy
-                season={raceDetails.season}
-                date={raceDetails.date}
-                results={raceDetails.Results ?? []}
-              />
-              <LapChart
-                season={raceDetails.season}
-                date={raceDetails.date}
-                results={raceDetails.Results ?? []}
-              />
-              <PitStops stops={pitStops} results={raceDetails.Results ?? []} />
-              <Championship year={year} round={round} />
-            </div>
-          </Spoiler>
-          )}
-
-          {/* Circuit */}
-          <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-            <div className="minimal-card p-0 overflow-hidden relative h-64 md:h-auto min-h-[240px]">
-              {getCircuitImg(info.Circuit.circuitId) ? (
-                <div className="absolute inset-0 bg-white p-4 flex items-center justify-center">
-                  <img
-                    src={getCircuitImg(info.Circuit.circuitId)!}
-                    className="max-w-full max-h-full object-contain mix-blend-multiply opacity-80"
-                    alt={`${info.Circuit.circuitName} layout`}
+            {!raceDetails ? (
+              <Preview race={info} />
+            ) : (
+              /* everything that gives the result away sits under one cover */
+              <Spoiler tall>
+                <div className="space-y-10 mb-12">
+                  <div className="space-y-3">
+                    <Podium results={raceDetails.Results ?? []} />
+                    <AtAGlance results={raceDetails.Results ?? []} stops={pitStops} />
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                    <div className="lg:col-span-2">
+                      <Sessions
+                        year={year}
+                        round={round}
+                        race={raceDetails.Results ?? []}
+                        stopsByDriver={stopsByDriver}
+                        hasSprint={!!races[idx]?.Sprint}
+                      />
+                    </div>
+                    <Championship year={year} round={round} />
+                  </div>
+                  <Analysis
+                    season={raceDetails.season}
+                    date={raceDetails.date}
+                    results={raceDetails.Results ?? []}
+                    stops={pitStops}
                   />
                 </div>
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center bg-neutral-900 text-neutral-700">
-                  <i className="fas fa-road text-4xl"></i>
+              </Spoiler>
+            )}
+
+            <section className="mb-12">
+              <h3 className="text-sm font-bold text-white uppercase tracking-wide mb-4">Circuit</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="minimal-card p-0 overflow-hidden relative min-h-[260px]">
+                  {img ? (
+                    <div className="absolute inset-0 bg-white p-4 flex items-center justify-center">
+                      <img
+                        src={img}
+                        className="max-w-full max-h-full object-contain mix-blend-multiply opacity-80"
+                        alt={`${info.Circuit.circuitName} layout`}
+                      />
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-neutral-900 text-neutral-700">
+                      <i className="fas fa-road text-4xl"></i>
+                    </div>
+                  )}
                 </div>
-              )}
-              <div className="absolute bottom-0 inset-x-0 bg-neutral-900/90 backdrop-blur-md px-4 py-3 border-t border-neutral-800 text-xs text-neutral-300">
-                {info.Circuit.circuitName} · {info.Circuit.Location.locality},{" "}
-                {info.Circuit.Location.country}
+                <CircuitHistory circuitId={info.Circuit.circuitId} before={info.date} />
               </div>
-            </div>
-            <CircuitHistory circuitId={info.Circuit.circuitId} before={info.date} />
-          </section>
-        </>
-      ) : (
-        <div className="text-center py-12 text-neutral-500 flex flex-col items-center">
-          <i className="fas fa-flag text-2xl mb-2 opacity-50"></i>
-          <p>Race not found.</p>
-        </div>
-      )}
+            </section>
+          </>
+        ) : (
+          <div className="text-center py-12 text-neutral-500 flex flex-col items-center">
+            <i className="fas fa-flag text-2xl mb-2 opacity-50"></i>
+            <p>Race not found.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

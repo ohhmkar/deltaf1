@@ -82,7 +82,8 @@ export const LapChart: React.FC<{ season: string; date: string; results: RaceRes
     };
   }, [raw, results]);
 
-  if (session === null) return null;
+  if (session === null)
+    return <p className="minimal-card p-5 text-sm text-neutral-500">No OpenF1 data for this race.</p>;
   const n = results.length;
   const H = PAD_Y * 2 + (n - 1) * ROW;
   const x = (lap: number) => PAD_L + (lap / (series?.total || 1)) * (W - PAD_L - PAD_R);
@@ -92,16 +93,15 @@ export const LapChart: React.FC<{ season: string; date: string; results: RaceRes
     setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
 
   return (
-    <section>
-      <div className="flex items-baseline justify-between mb-4">
-        <h3 className="text-sm font-bold text-white uppercase tracking-wide">Lap Chart</h3>
+      <div className="minimal-card p-4 relative">
         {picked.length > 0 && (
-          <button onClick={() => setPicked([])} className="text-xs text-neutral-500 hover:text-white">
+          <button
+            onClick={() => setPicked([])}
+            className="absolute top-3 right-4 z-10 text-xs text-neutral-500 hover:text-white"
+          >
             clear
           </button>
         )}
-      </div>
-      <div className="minimal-card p-4">
         {session === "locked" || raw === "locked" ? (
           <LiveLockNotice />
         ) : raw === "error" ? (
@@ -162,6 +162,5 @@ export const LapChart: React.FC<{ season: string; date: string; results: RaceRes
           </>
         )}
       </div>
-    </section>
   );
 };

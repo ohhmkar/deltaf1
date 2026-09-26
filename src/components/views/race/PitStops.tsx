@@ -21,9 +21,7 @@ export const PitStops: React.FC<{ stops: PitStop[]; results: RaceResult[] }> = (
   const fastest = stops.reduce((a, b) => (pitSecs(b.duration) < pitSecs(a.duration) ? b : a));
 
   return (
-    <section>
-      <h3 className="text-sm font-bold text-white uppercase tracking-wide mb-4">Pit Stops</h3>
-      <div className="minimal-card p-5">
+    <div className="minimal-card p-5">
         <div className="space-y-1.5">
           {results
             .filter((r) => byDriver.has(r.Driver.driverId))
@@ -54,7 +52,6 @@ export const PitStops: React.FC<{ stops: PitStop[]; results: RaceResult[] }> = (
               </div>
             ))}
         </div>
-      </div>
-    </section>
+    </div>
   );
 };
