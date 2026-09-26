@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { fetchStints, isLiveLocked, LIVE_LOCKED_MSG, type OF1Stint } from "../../../services/openf1";
+import { fetchStints, isLiveLocked, type OF1Stint } from "../../../services/openf1";
 import { compound, getTeamHex } from "../../../utils/helpers";
 import type { RaceResult } from "../../../types";
 import { useOpenF1Session } from "./useOpenF1Session";
+import { LiveLockNotice } from "../../shared";
 
 // One bar per driver (finishing order), split into stints coloured by
 // compound. OpenF1 data, 2023 on.
@@ -41,7 +42,7 @@ export const Strategy: React.FC<{ season: string; date: string; results: RaceRes
       <h3 className="text-sm font-bold text-white uppercase tracking-wide mb-4">Tyre Strategy</h3>
       <div className="minimal-card p-5">
         {session === "locked" || stints === "locked" ? (
-          <p className="text-sm text-neutral-500">{LIVE_LOCKED_MSG}</p>
+          <LiveLockNotice />
         ) : !stints ? (
           <div className="min-h-[300px] animate-pulse" />
         ) : !stints.size || !totalLaps ? (

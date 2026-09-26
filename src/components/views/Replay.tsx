@@ -16,11 +16,10 @@ import {
   OF1Stint,
   OF1Lap,
   isLiveLocked,
-  LIVE_LOCKED_MSG,
 } from "../../services/openf1";
 import { useSearchParams } from "react-router";
 import { useTheme } from "../../context/ThemeContext";
-import { useToast } from "../shared";
+import { useToast, LiveLockNotice } from "../shared";
 import { compound } from "../../utils/helpers";
 
 const WINDOW_MS = 60_000; // location fetched in 60s chunks (~0.5MB each, all cars)
@@ -179,6 +178,7 @@ export const Replay: React.FC = () => {
   const [dragging, setDragging] = useState(false);
   const dragRef = useRef<{ x: number; y: number } | null>(null);
   const [status, setStatus] = useState("");
+  const [locked, setLocked] = useState(false); // OpenF1 401 during a live session
   const [, setVersion] = useState(0); // bump to re-render when a window loads while paused
 
   const points = useRef<Map<number, Pt[]>>(new Map());
@@ -198,6 +198,7 @@ export const Replay: React.FC = () => {
   useEffect(() => {
     let cancel = false;
     setStatus("Loading races…");
+    setLocked(false);
     fetchRaceSessions(year)
       .then((all) => {
         if (cancel) return;
@@ -217,9 +218,11 @@ export const Replay: React.FC = () => {
           );
         if (hit) loadSession(hit, p!.t * 1000);
       })
-      .catch((e) =>
-        !cancel && setStatus(isLiveLocked(e) ? LIVE_LOCKED_MSG : "Failed to load races.")
-      );
+      .catch((e) => {
+        if (cancel) return;
+        setLocked(isLiveLocked(e));
+        setStatus(isLiveLocked(e) ? "" : "Failed to load races.");
+      });
     return () => {
       cancel = true;
     };
@@ -317,8 +320,10 @@ export const Replay: React.FC = () => {
       }
       setStatus(pts.length ? "" : "No location data for this race.");
     } catch (e) {
-      if (token === loadToken.current)
-        setStatus(isLiveLocked(e) ? LIVE_LOCKED_MSG : "Failed to load session.");
+      if (token === loadToken.current) {
+        setLocked(isLiveLocked(e));
+        setStatus(isLiveLocked(e) ? "" : "Failed to load session.");
+      }
     }
   };
 
@@ -642,6 +647,8 @@ export const Replay: React.FC = () => {
           <span className="text-neutral-500 text-sm self-center">{status}</span>
         )}
       </div>
+
+      {locked && <LiveLockNotice className="mb-6 max-w-2xl" />}
 
       {session && trackPath && (
         <div className="flex flex-col lg:flex-row gap-4 max-w-6xl mx-auto">

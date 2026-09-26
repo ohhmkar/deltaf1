@@ -3,13 +3,13 @@ import {
   fetchLaps,
   fetchPositions,
   isLiveLocked,
-  LIVE_LOCKED_MSG,
   type OF1Lap,
   type OF1Position,
 } from "../../../services/openf1";
 import { getTeamHex } from "../../../utils/helpers";
 import type { RaceResult } from "../../../types";
 import { useOpenF1Session } from "./useOpenF1Session";
+import { LiveLockNotice } from "../../shared";
 
 const W = 800, ROW = 18, PAD_L = 8, PAD_R = 44, PAD_Y = 12;
 
@@ -103,7 +103,7 @@ export const LapChart: React.FC<{ season: string; date: string; results: RaceRes
       </div>
       <div className="minimal-card p-4">
         {session === "locked" || raw === "locked" ? (
-          <p className="text-sm text-neutral-500">{LIVE_LOCKED_MSG}</p>
+          <LiveLockNotice />
         ) : raw === "error" ? (
           <p className="text-sm text-neutral-500">Couldn't load position data.</p>
         ) : !series ? (

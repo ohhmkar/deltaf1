@@ -13,8 +13,6 @@ let queue: Promise<unknown> = Promise.resolve();
 // While any F1 session is live, OpenF1 answers every unauthenticated request
 // (past races included) with 401 until it ends.
 export const LIVE_LOCKED = "OpenF1 is locked while an F1 session is live";
-export const LIVE_LOCKED_MSG =
-  "OpenF1 pauses public access while an F1 session is live. Try again once it ends.";
 export const isLiveLocked = (e: unknown) => e instanceof Error && e.message === LIVE_LOCKED;
 
 async function rawGet<T>(path: string): Promise<T> {
