@@ -59,17 +59,16 @@ export const Preview: React.FC<{ race: Race }> = ({ race }) => {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-      <div className="minimal-card p-6">
-        <div className="text-[10px] uppercase tracking-wider text-neutral-500 mb-2">
-          {start > now ? "Lights out in" : "Results"}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-px rounded-2xl overflow-hidden bg-neutral-800 border border-neutral-800 mb-12">
+      <div className="bg-neutral-950 p-6 md:p-8">
+        <p className="text-sm text-neutral-400">
+          {start > now ? "Lights out in" : "The race has started"}
+        </p>
+        <div className="font-display font-bold text-4xl md:text-5xl text-white leading-tight mb-8">
+          {start > now ? countdown(start - now) : "Results soon"}
         </div>
-        <div className="text-3xl md:text-4xl font-mono text-white tracking-tighter mb-6">
-          {start > now ? countdown(start - now) : "Awaiting results"}
-        </div>
-        <div className="text-[10px] uppercase tracking-wider text-neutral-500 mb-2">
-          Weekend schedule · {localTzLabel()}
-        </div>
+        <h2 className="font-display font-semibold text-lg text-white">Weekend schedule</h2>
+        <p className="text-xs text-neutral-500 mb-3">Times in {localTzLabel()}</p>
         <div className="space-y-1.5 text-sm">
           {sessions.map((s) => {
             const done = s.time && new Date(`${s.date}T${s.time}`).getTime() < now;
@@ -81,17 +80,17 @@ export const Preview: React.FC<{ race: Race }> = ({ race }) => {
                 }`}
               >
                 <span>{s.label}</span>
-                <span className="font-mono text-xs">{when(s.date, s.time)}</span>
+                <span className="font-display">{when(s.date, s.time)}</span>
               </div>
             );
           })}
         </div>
       </div>
 
-      <div className="minimal-card p-6">
-        <div className="text-[10px] uppercase tracking-wider text-neutral-500 mb-3">
-          Last year here · {parseInt(race.season) - 1}
-        </div>
+      <div className="bg-neutral-950 p-6 md:p-8">
+        <h2 className="font-display font-semibold text-lg text-white mb-4">
+          Podium here in {parseInt(race.season) - 1}
+        </h2>
         {!lastYear ? (
           <div className="min-h-[120px] animate-pulse" />
         ) : !lastYear.length ? (
@@ -100,14 +99,15 @@ export const Preview: React.FC<{ race: Race }> = ({ race }) => {
           <div className="space-y-3">
             {lastYear.map((r) => (
               <div key={r.position} className="flex items-center gap-3">
-                <span className="font-mono text-neutral-500 w-6">P{r.position}</span>
+                <span className="font-display font-bold text-2xl text-neutral-500 w-6">{r.position}</span>
                 <span
                   className="w-1 h-6 rounded-full"
                   style={{ backgroundColor: getTeamHex(r.Constructor.constructorId) }}
                 />
                 <div>
-                  <div className="text-neutral-200 font-medium">
-                    {r.Driver.givenName} {r.Driver.familyName}
+                  <div className="text-neutral-200">
+                    {r.Driver.givenName}{" "}
+                    <span className="font-display font-bold uppercase text-white">{r.Driver.familyName}</span>
                   </div>
                   <div className="text-[11px] text-neutral-500">{r.Constructor.name}</div>
                 </div>

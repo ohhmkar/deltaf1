@@ -84,6 +84,7 @@ export const LapChart: React.FC<{ season: string; date: string; results: RaceRes
 
   if (session === null)
     return <p className="minimal-card p-5 text-sm text-neutral-500">No OpenF1 data for this race.</p>;
+  if (session === "locked" || raw === "locked") return <LiveLockNotice />;
   const n = results.length;
   const H = PAD_Y * 2 + (n - 1) * ROW;
   const x = (lap: number) => PAD_L + (lap / (series?.total || 1)) * (W - PAD_L - PAD_R);
@@ -102,9 +103,7 @@ export const LapChart: React.FC<{ season: string; date: string; results: RaceRes
             clear
           </button>
         )}
-        {session === "locked" || raw === "locked" ? (
-          <LiveLockNotice />
-        ) : raw === "error" ? (
+        {raw === "error" ? (
           <p className="text-sm text-neutral-500">Couldn't load position data.</p>
         ) : !series ? (
           <div className="min-h-[360px] animate-pulse" />

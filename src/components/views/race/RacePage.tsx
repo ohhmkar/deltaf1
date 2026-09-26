@@ -71,8 +71,8 @@ export const RacePage: React.FC<{
             Calendar
           </button>
           {info && (
-            <span className="hidden md:block text-xs text-neutral-500 truncate">
-              R{info.round} · {short(info.raceName)}
+            <span className="hidden md:block text-sm font-display font-semibold text-neutral-300 truncate">
+              {short(info.raceName)} {info.season}
             </span>
           )}
           <nav aria-label="Other races" className="flex items-center gap-1 min-w-0">
@@ -108,21 +108,22 @@ export const RacePage: React.FC<{
         ) : info ? (
           <>
             <header className="mb-8">
-              <div className="text-xs font-mono text-neutral-500 uppercase mb-2">
-                Round {info.round} · {info.season} ·{" "}
+              <p className="text-sm text-neutral-400 mb-2">
+                Round {info.round}
+                {races.length ? ` of ${races.length}` : ""}, {info.season} season.{" "}
                 {raceStart(info).toLocaleDateString(undefined, {
-                  weekday: "short",
+                  weekday: "long",
                   day: "numeric",
-                  month: "short",
+                  month: "long",
                 })}
-              </div>
-              <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-white mb-3">
+              </p>
+              <h1 className="font-display font-bold text-4xl md:text-6xl leading-[0.95] tracking-tight text-white mb-4">
                 {info.raceName}
               </h1>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-3 text-neutral-400 text-sm">
                 <span className="flex items-center">
                   <Flag country={info.Circuit.Location.country} className="w-4 h-auto mr-2 rounded shadow-sm" />
-                  {info.Circuit.circuitName} · {info.Circuit.Location.locality}
+                  {info.Circuit.circuitName}, {info.Circuit.Location.locality}
                 </span>
                 {/* OpenF1 (Replay's source) covers 2023 on; matched by race date */}
                 {raceDetails && parseInt(info.season) >= 2023 && (
@@ -169,14 +170,14 @@ export const RacePage: React.FC<{
             )}
 
             <section className="mb-12">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wide mb-4">Circuit</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="minimal-card p-0 overflow-hidden relative min-h-[260px]">
+              <h2 className="font-display font-bold text-2xl text-white leading-none mb-5">Circuit</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-px rounded-2xl overflow-hidden bg-neutral-800 border border-neutral-800">
+                <div className="overflow-hidden relative min-h-[260px] bg-neutral-950">
                   {img ? (
-                    <div className="absolute inset-0 bg-white p-4 flex items-center justify-center">
+                    <div className="absolute inset-0 p-6 flex items-center justify-center">
                       <img
                         src={img}
-                        className="max-w-full max-h-full object-contain mix-blend-multiply opacity-80"
+                        className="circuit-map max-w-full max-h-full object-contain"
                         alt={`${info.Circuit.circuitName} layout`}
                       />
                     </div>

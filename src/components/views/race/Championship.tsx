@@ -44,9 +44,10 @@ export const Championship: React.FC<{ year: number; round: string }> = ({ year, 
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-white uppercase tracking-wide">
-          Championship after this round
-        </h3>
+        <div>
+          <h2 className="font-display font-bold text-2xl text-white leading-none">Standings</h2>
+          <p className="text-xs text-neutral-500 mt-1">After round {round}</p>
+        </div>
         <Tabs
           label="Standings"
           size="sm"
@@ -58,13 +59,13 @@ export const Championship: React.FC<{ year: number; round: string }> = ({ year, 
           ]}
         />
       </div>
-      <div className="minimal-card p-0 overflow-hidden">
+      <div>
         {failed ? (
-          <p className="p-5 text-sm text-neutral-500">Standings unavailable.</p>
+          <p className="py-6 text-sm text-neutral-500">Couldn't load the standings. Switch tabs to retry.</p>
         ) : !data ? (
-          <div className="p-5 min-h-[240px] animate-pulse" />
+          <div className="min-h-[240px] rounded-xl bg-neutral-900/50 animate-pulse" />
         ) : !data.now.length ? (
-          <p className="p-5 text-sm text-neutral-500">No standings for this round.</p>
+          <p className="py-6 text-sm text-neutral-500">No standings recorded for this round.</p>
         ) : (
           <table className="w-full text-sm">
             <tbody>
@@ -73,14 +74,14 @@ export const Championship: React.FC<{ year: number; round: string }> = ({ year, 
                 const moved = b ? b.pos - row.pos : 0;
                 const gained = row.pts - (b?.pts ?? 0);
                 return (
-                  <tr key={row.id} className="border-b border-neutral-800/50 last:border-0">
-                    <td className="py-2 pl-4 w-10 font-mono text-neutral-500">{row.pos}</td>
-                    <td className="py-2 w-10 font-mono text-xs">
+                  <tr key={row.id} className="border-b border-neutral-800/60 last:border-0">
+                    <td className="py-2.5 pr-2 w-8 font-display font-bold text-lg leading-none text-neutral-400">{row.pos}</td>
+                    <td className="py-2.5 w-9 font-display text-xs">
                       {moved > 0 && <span className="text-green-500">▲{moved}</span>}
                       {moved < 0 && <span className="text-red-500">▼{-moved}</span>}
                     </td>
-                    <td className="py-2">
-                      <span className="flex items-center gap-2 text-neutral-200">
+                    <td className="py-2.5">
+                      <span className="flex items-center gap-2.5 font-display font-semibold text-base text-white">
                         <span
                           className="w-1 h-4 rounded-full"
                           style={{ backgroundColor: getTeamHex(row.team) }}
@@ -88,10 +89,10 @@ export const Championship: React.FC<{ year: number; round: string }> = ({ year, 
                         {row.name}
                       </span>
                     </td>
-                    <td className="py-2 text-right font-mono text-xs text-neutral-500">
+                    <td className="py-2.5 text-right font-display text-sm text-green-500/80">
                       {gained > 0 ? `+${gained}` : ""}
                     </td>
-                    <td className="py-2 pr-4 pl-4 text-right font-mono text-white w-16">{row.pts}</td>
+                    <td className="py-2.5 pl-3 text-right font-display font-bold text-base text-white w-14">{row.pts}</td>
                   </tr>
                 );
               })}

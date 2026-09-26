@@ -38,17 +38,18 @@ export const Sessions: React.FC<{
 
   return (
     <section>
-      <div className="mb-4">
-        <Tabs label="Session" value={tab} onChange={setTab} options={tabs} />
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h2 className="font-display font-bold text-2xl text-white leading-none">Results</h2>
+        <Tabs label="Session" size="sm" value={tab} onChange={setTab} options={tabs} />
       </div>
       {tab === "race" ? (
         <ResultsTable results={race} stopsByDriver={stopsByDriver} />
       ) : current === "error" ? (
-        <p className="minimal-card p-5 text-sm text-neutral-500">Couldn't load this session.</p>
+        <p className="py-8 text-sm text-neutral-500">Couldn't load this session. Switch tabs to retry.</p>
       ) : !current ? (
-        <div className="minimal-card p-5 min-h-[300px] animate-pulse" />
+        <div className="min-h-[300px] rounded-xl bg-neutral-900/50 animate-pulse" />
       ) : !current.length ? (
-        <p className="minimal-card p-5 text-sm text-neutral-500">No data for this session.</p>
+        <p className="py-8 text-sm text-neutral-500">No results recorded for this session.</p>
       ) : tab === "sprint" ? (
         <ResultsTable results={current} />
       ) : (
@@ -59,35 +60,38 @@ export const Sessions: React.FC<{
 };
 
 const QualiTable: React.FC<{ rows: QualiRow[] }> = ({ rows }) => (
-  <div className="minimal-card p-0 overflow-hidden">
+  <div className="overflow-x-auto">
     <table className="w-full text-sm">
       <thead>
-        <tr className="text-[10px] uppercase tracking-wider text-neutral-500 border-b border-neutral-800">
-          <th className="py-2 pl-3 pr-1 text-left font-medium w-10">Pos</th>
-          <th className="py-2 px-2 text-left font-medium">Driver</th>
+        <tr className="text-xs text-neutral-500 border-b border-neutral-800">
+          <th className="py-2 pr-2 text-left font-normal w-10"><span className="sr-only">Position</span></th>
+          <th className="py-2 px-2 text-left font-normal">Driver</th>
           {["Q1", "Q2", "Q3"].map((q) => (
-            <th key={q} className="py-2 px-2 text-right font-medium">{q}</th>
+            <th key={q} className="py-2 px-2 text-right font-normal">{q}</th>
           ))}
         </tr>
       </thead>
       <tbody>
         {rows.map((r) => (
-          <tr key={r.Driver.driverId} className="border-b border-neutral-800/50 last:border-0">
-            <td className="py-2 pl-3 pr-1 font-mono font-bold text-neutral-500">{r.position}</td>
-            <td className="py-2 px-2">
-              <span className="flex items-center gap-2 font-semibold text-white">
+          <tr key={r.Driver.driverId} className="border-b border-neutral-800/60 last:border-0 hover:bg-neutral-900/60">
+            <td className="py-2.5 pr-2 font-display font-bold text-lg leading-none text-neutral-400">{r.position}</td>
+            <td className="py-2.5 px-2">
+              <span className="flex items-center gap-2.5">
                 <span
-                  className="w-1 h-6 rounded-full shrink-0"
+                  className="w-1 h-5 rounded-full shrink-0"
                   style={{ backgroundColor: getTeamHex(r.Constructor.constructorId) }}
                 />
-                <span className="sm:hidden">{r.Driver.code ?? r.Driver.familyName}</span>
+                <span className="sm:hidden font-display font-bold uppercase text-base text-white">
+                  {r.Driver.code ?? r.Driver.familyName}
+                </span>
                 <span className="hidden sm:inline">
-                  {r.Driver.givenName} {r.Driver.familyName}
+                  <span className="text-neutral-400">{r.Driver.givenName} </span>
+                  <span className="font-display font-bold uppercase text-base text-white">{r.Driver.familyName}</span>
                 </span>
               </span>
             </td>
             {(["Q1", "Q2", "Q3"] as const).map((q) => (
-              <td key={q} className="py-2 px-2 text-right font-mono text-xs text-neutral-300 whitespace-nowrap">
+              <td key={q} className="py-2.5 px-2 text-right font-display text-base text-neutral-200 whitespace-nowrap">
                 {r[q] || <span className="text-neutral-700">-</span>}
               </td>
             ))}

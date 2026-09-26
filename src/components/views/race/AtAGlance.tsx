@@ -13,7 +13,7 @@ export const AtAGlance: React.FC<{ results: RaceResult[]; stops: PitStop[] }> = 
     tiles.push({
       label: "Fastest lap",
       value: fl.FastestLap.Time.time,
-      sub: `${name(fl)} · lap ${fl.FastestLap.lap}`,
+      sub: `${name(fl)}, lap ${fl.FastestLap.lap}`,
       color: getTeamHex(fl.Constructor.constructorId),
       accent: "text-purple-400",
     });
@@ -25,7 +25,7 @@ export const AtAGlance: React.FC<{ results: RaceResult[]; stops: PitStop[] }> = 
       tiles.push({
         label: "Quickest stop",
         value: `${pitSecs(q.duration).toFixed(1)}s`,
-        sub: `${name(r)} · lap ${q.lap} · pit lane`,
+        sub: `${name(r)}, lap ${q.lap} (pit lane time)`,
         color: getTeamHex(r.Constructor.constructorId),
       });
   }
@@ -38,7 +38,7 @@ export const AtAGlance: React.FC<{ results: RaceResult[]; stops: PitStop[] }> = 
     tiles.push({
       label: "Biggest mover",
       value: `▲${movers[0].gain}`,
-      sub: `${name(movers[0].r)} · P${movers[0].r.grid} → P${movers[0].r.position}`,
+      sub: `${name(movers[0].r)}, P${movers[0].r.grid} to P${movers[0].r.position}`,
       color: getTeamHex(movers[0].r.Constructor.constructorId),
       accent: "text-green-500",
     });
@@ -51,17 +51,20 @@ export const AtAGlance: React.FC<{ results: RaceResult[]; stops: PitStop[] }> = 
   });
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    // gap-px over a border-coloured backdrop draws the dividing hairlines
+    <dl className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-neutral-800 border-y border-neutral-800">
       {tiles.map((t) => (
-        <div key={t.label} className="minimal-card p-4 relative overflow-hidden">
-          {t.color && <div className="absolute left-0 inset-y-0 w-1" style={{ backgroundColor: t.color }} />}
-          <div className="text-[10px] uppercase tracking-wider text-neutral-500">{t.label}</div>
-          <div className={`text-xl md:text-2xl font-mono font-semibold mt-1 ${t.accent ?? "text-white"}`}>
+        <div key={t.label} className="bg-[#0a0a0a] light:bg-neutral-50 px-4 md:px-5 py-4 min-w-0">
+          <dt className="text-xs text-neutral-500">{t.label}</dt>
+          <dd className={`font-display font-bold text-2xl md:text-3xl leading-tight mt-0.5 ${t.accent ?? "text-white"}`}>
             {t.value}
-          </div>
-          <div className="text-[11px] text-neutral-400 mt-1 truncate">{t.sub}</div>
+          </dd>
+          <dd className="text-xs text-neutral-400 mt-0.5 flex items-center gap-1.5 min-w-0">
+            {t.color && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: t.color }} />}
+            <span className="truncate">{t.sub}</span>
+          </dd>
         </div>
       ))}
-    </div>
+    </dl>
   );
 };

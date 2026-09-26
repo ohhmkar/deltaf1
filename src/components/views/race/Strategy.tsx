@@ -35,14 +35,13 @@ export const Strategy: React.FC<{ season: string; date: string; results: RaceRes
 
   if (session === null)
     return <p className="minimal-card p-5 text-sm text-neutral-500">No OpenF1 data for this race.</p>;
+  if (session === "locked" || stints === "locked") return <LiveLockNotice />;
   const totalLaps = parseInt(results[0]?.laps ?? "0");
   const used = new Set<string>();
 
   return (
       <div className="minimal-card p-5">
-        {session === "locked" || stints === "locked" ? (
-          <LiveLockNotice />
-        ) : !stints ? (
+        {!stints ? (
           <div className="min-h-[300px] animate-pulse" />
         ) : !stints.size || !totalLaps ? (
           <p className="text-sm text-neutral-500">No tyre data for this race.</p>

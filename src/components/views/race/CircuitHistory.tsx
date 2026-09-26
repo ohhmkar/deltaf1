@@ -40,11 +40,11 @@ export const CircuitHistory: React.FC<{ circuitId: string; before: string }> = (
   }, [circuitId, before]);
 
   if (failed)
-    return <div className="minimal-card p-6 text-sm text-neutral-500">Circuit history unavailable.</div>;
-  if (!winners) return <div className="minimal-card p-6 animate-pulse min-h-[200px]" />;
+    return <div className="bg-neutral-950 p-6 text-sm text-neutral-500">Couldn't load this circuit's history.</div>;
+  if (!winners) return <div className="bg-neutral-950 p-6 animate-pulse min-h-[260px]" />;
   if (!winners.length)
     return (
-      <div className="minimal-card p-6 text-sm text-neutral-500">
+      <div className="bg-neutral-950 p-6 text-sm text-neutral-500">
         First Grand Prix at this circuit.
       </div>
     );
@@ -58,6 +58,7 @@ export const CircuitHistory: React.FC<{ circuitId: string; before: string }> = (
       n: 0,
     };
     c.n++;
+    c.team = w.Constructor.constructorId; // winners are chronological: colour by latest win
     counts.set(w.Driver.driverId, c);
   }
   const top = [...counts.values()].sort((a, b) => b.n - a.n).slice(0, 3);
@@ -68,29 +69,29 @@ export const CircuitHistory: React.FC<{ circuitId: string; before: string }> = (
     .sort((a, b) => lapMs(a.res.FastestLap!.Time.time) - lapMs(b.res.FastestLap!.Time.time))[0];
 
   return (
-    <div className="minimal-card p-6 space-y-5 text-sm">
-      <div className="text-[10px] uppercase tracking-wider text-neutral-500">
-        Going into this race · {winners.length} previous GP{winners.length > 1 ? "s" : ""}
-      </div>
+    <div className="bg-neutral-950 p-6 space-y-5 text-sm">
+      <p className="text-neutral-400">
+        {winners.length} Grand{winners.length > 1 ? "s" : ""} Prix held here before this one.
+      </p>
 
       <div>
-        <div className="text-xs text-neutral-500 uppercase mb-2">Most wins here</div>
+        <h3 className="font-display font-semibold text-base text-white mb-1.5">Most wins</h3>
         {top.map((t) => (
           <div key={t.name} className="flex items-center justify-between py-0.5">
             <span className="flex items-center gap-2 text-neutral-200">
               <span className="w-1 h-4 rounded-full" style={{ backgroundColor: getTeamHex(t.team) }} />
               {t.name}
             </span>
-            <span className="font-mono text-white">{t.n}</span>
+            <span className="font-display font-bold text-white">{t.n}</span>
           </div>
         ))}
       </div>
 
       <div>
-        <div className="text-xs text-neutral-500 uppercase mb-2">Recent winners</div>
+        <h3 className="font-display font-semibold text-base text-white mb-1.5">Recent winners</h3>
         {recent.map((r) => (
           <div key={r.season + r.round} className="flex justify-between py-0.5 text-neutral-300">
-            <span className="font-mono text-neutral-500 w-12">{r.season}</span>
+            <span className="font-display text-neutral-500 w-12">{r.season}</span>
             <span className="flex-1 truncate">
               {r.Results![0].Driver.givenName} {r.Results![0].Driver.familyName}
             </span>
@@ -100,14 +101,14 @@ export const CircuitHistory: React.FC<{ circuitId: string; before: string }> = (
 
       {best && (
         <div>
-          <div className="text-xs text-neutral-500 uppercase mb-1">
-            Fastest race lap <span className="normal-case">(since 2004, any layout)</span>
-          </div>
+          <h3 className="font-display font-semibold text-base text-white mb-1">
+            Fastest race lap <span className="font-sans font-normal text-xs text-neutral-500">since 2004, any layout</span>
+          </h3>
           <div className="text-white">
-            <span className="font-mono">{best.res.FastestLap!.Time.time}</span>
+            <span className="font-display font-bold text-lg text-purple-400">{best.res.FastestLap!.Time.time}</span>
             <span className="text-neutral-400">
               {" "}
-              · {best.res.Driver.familyName}, {best.r.season}
+              {best.res.Driver.givenName} {best.res.Driver.familyName}, {best.r.season}
             </span>
           </div>
         </div>

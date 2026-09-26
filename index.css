@@ -3,6 +3,18 @@
 /* light: follows the app toggle (html.light), set by ThemeContext */
 @custom-variant light (&:where(.light, .light *));
 
+/* Titillium Web: F1's long-time graphics face. Used for titles, positions and
+   timing numbers (tabular), so data reads like a timing screen. */
+@theme {
+  --font-display: "Titillium Web", "Inter", sans-serif;
+}
+.font-display { font-variant-numeric: tabular-nums; }
+
+/* F1 track maps are dark lines on white: invert for the dark theme (hue-rotate
+   keeps the sector colours), multiply them onto the page in light mode */
+.circuit-map { filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; }
+html.light .circuit-map { filter: none; mix-blend-mode: multiply; }
+
 /* SVG chart colours (inline SVG can't use light: classes on every attribute) */
 :root { --chart-bg: #171717; --chart-axis: #404040; --chart-grid: #262626; }
 html.light { --chart-bg: #ffffff; --chart-axis: #a3a3a3; --chart-grid: #e5e5e5; }

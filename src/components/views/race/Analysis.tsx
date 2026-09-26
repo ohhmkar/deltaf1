@@ -31,7 +31,7 @@ export const Analysis: React.FC<{
   return (
     <section>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <h3 className="text-sm font-bold text-white uppercase tracking-wide">Race analysis</h3>
+        <h2 className="font-display font-bold text-2xl text-white leading-none">Race analysis</h2>
         {options.length > 1 && (
           <Tabs label="Analysis" size="sm" value={current} onChange={setTab} options={options} />
         )}
