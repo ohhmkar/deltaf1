@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { fetchData } from "../../../services/api";
-import { getTeamHex, getCircuitImg } from "../../../utils/helpers";
+import { getCircuitImg } from "../../../utils/helpers";
 import { Flag, Spoiler, SkeletonCard } from "../../shared";
 import type { Race, PitStop } from "../../../types";
 import { Podium } from "./Podium";
@@ -12,6 +12,7 @@ import { Championship } from "./Championship";
 import { Preview } from "./Preview";
 import { Strategy } from "./Strategy";
 import { LapChart } from "./LapChart";
+import { AtAGlance } from "./AtAGlance";
 
 // One race weekend: /season?year=&round= (opened from the Calendar or a link).
 export const RacePage: React.FC<{
@@ -129,51 +130,7 @@ export const RacePage: React.FC<{
           <Spoiler tall>
             <div className="space-y-8 mb-12">
               <Podium results={raceDetails.Results ?? []} />
-              {(() => {
-                const fl = raceDetails.Results?.find(
-                  (r) => r.FastestLap?.rank === "1"
-                );
-                if (fl && fl.FastestLap) {
-                  return (
-                    <div className="minimal-card p-6 flex flex-col justify-center bg-neutral-900/20 border-l-4 border-l-purple-500 relative overflow-hidden">
-                      <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
-                        <i className="fas fa-stopwatch text-6xl"></i>
-                      </div>
-                      <div className="text-purple-400 font-bold uppercase tracking-wider text-xs mb-2">
-                        Fastest Lap
-                      </div>
-                      <div className="text-4xl font-mono text-white tracking-tighter mb-4">
-                        {fl.FastestLap.Time.time}
-                      </div>
-                      <div className="flex items-center">
-                        <div
-                          className="w-1 h-8 rounded-full mr-3"
-                          style={{
-                            backgroundColor: getTeamHex(
-                              fl.Constructor.constructorId
-                            ),
-                          }}
-                        ></div>
-                        <div>
-                          <div className="font-bold text-white text-lg">
-                            {fl.Driver.givenName} {fl.Driver.familyName}
-                          </div>
-                          <div className="text-xs text-neutral-500 flex items-center space-x-2">
-                            <span>{fl.Constructor.name}</span>
-                            <span>•</span>
-                            <span>Lap {fl.FastestLap.lap}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-                return (
-                  <div className="minimal-card p-6 flex items-center justify-center text-neutral-500">
-                    Fastest lap data unavailable
-                  </div>
-                );
-              })()}
+              <AtAGlance results={raceDetails.Results ?? []} stops={pitStops} />
               <Sessions
                 year={year}
                 round={round}
