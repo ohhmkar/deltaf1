@@ -267,9 +267,13 @@ export const RacePage: React.FC<{
                           {!isDNF &&
                             grid !== 0 &&
                             (diff > 0 ? (
-                              <i className="fas fa-caret-up text-green-500"></i>
+                              <span className="text-green-500 font-mono text-xs" title={`Gained ${diff} places`}>
+                                ▲{diff}
+                              </span>
                             ) : diff < 0 ? (
-                              <i className="fas fa-caret-down text-red-500"></i>
+                              <span className="text-red-500 font-mono text-xs" title={`Lost ${-diff} places`}>
+                                ▼{-diff}
+                              </span>
                             ) : (
                               <span className="text-neutral-700">-</span>
                             ))}
