@@ -36,9 +36,12 @@ export const fetchData = async (
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const res = await fetch(`${API_BASE}${endpoint}`);
-      
+
       if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        const err = new Error(`HTTP ${res.status}: ${res.statusText}`);
+        // other 4xx won't change on retry; only rate limits and server errors might
+        if (res.status !== 429 && res.status < 500) throw Object.assign(err, { fatal: true });
+        throw err;
       }
 
       const data = await res.json();
@@ -53,6 +56,7 @@ export const fetchData = async (
     } catch (error) {
       lastError = error instanceof Error ? error : new Error("Unknown error");
       console.error(`API Error (attempt ${attempt + 1}/${retries + 1}):`, error);
+      if ((error as { fatal?: boolean }).fatal) break;
 
       // Don't wait after last attempt
       if (attempt < retries) {

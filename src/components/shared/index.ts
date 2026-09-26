@@ -4,11 +4,5 @@ export { Navbar } from "./Navbar";
 export { Spoiler } from "./Spoiler";
 export { ErrorBoundary } from "./ErrorBoundary";
 export { ToastProvider, useToast } from "./Toast";
-export {
-  SkeletonCard,
-  SkeletonTable,
-  SkeletonList,
-  SkeletonText,
-} from "./Skeleton";
-export { ComparisonBar, RadarChart } from "./Charts";
+export { SkeletonCard } from "./Skeleton";
 

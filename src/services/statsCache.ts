@@ -249,9 +249,3 @@ export const isStatsLoading = () => isLoading;
 
 // Get cached stats synchronously
 export const getCachedCareerStats = () => getCachedStats();
-
-// Force refresh (bypass cache)
-export const refreshCareerStats = async () => {
-  localStorage.removeItem(CACHE_KEY);
-  return preloadCareerStats();
-};

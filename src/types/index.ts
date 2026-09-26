@@ -85,16 +85,6 @@ export interface PitStop {
   duration: string;
 }
 
-export interface QualifyingResult {
-  number: string;
-  position: string;
-  Driver: Driver;
-  Constructor: Constructor;
-  Q1: string;
-  Q2: string;
-  Q3: string;
-}
-
 export interface CareerStats {
   wins: number;
   poles: number;
@@ -102,32 +92,3 @@ export interface CareerStats {
   defending: boolean;
 }
 
-export interface LapTime {
-  lapNumber: string;
-  position: string;
-  time: string;
-}
-
-export interface DriverLaps {
-  driverId: string;
-  Driver: Driver;
-  Constructor: Constructor;
-  Laps: LapTime[];
-}
-
-export interface TelemetryData {
-  season: string;
-  round: string;
-  raceName: string;
-  Circuit: {
-    circuitId: string;
-    circuitName: string;
-    Location: {
-      locality: string;
-      country: string;
-    };
-  };
-  results?: RaceResult[];
-  laps?: DriverLaps[];
-  pitStops?: PitStop[];
-}

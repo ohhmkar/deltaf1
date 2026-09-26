@@ -35,14 +35,6 @@ class ApiCache {
     return this.get(key) !== null;
   }
 
-  clear(): void {
-    this.cache.clear();
-  }
-
-  remove(key: string): void {
-    this.cache.delete(key);
-  }
-
   // Clear expired entries
   cleanup(): void {
     const now = Date.now();
