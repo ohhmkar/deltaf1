@@ -80,7 +80,22 @@ export const Season: React.FC = () => {
 
   if (selectedRound)
     return (
-      <RacePage year={year} round={selectedRound} onBack={backToCalendar} />
+      <RacePage
+        year={year}
+        round={selectedRound}
+        races={races}
+        onBack={backToCalendar}
+        // replace, not push: Back should still lead to the calendar
+        onGo={(r) =>
+          setParams(
+            (p) => {
+              p.set("round", r);
+              return p;
+            },
+            { replace: true }
+          )
+        }
+      />
     );
 
   return (
