@@ -4,6 +4,7 @@ import { fetchData } from "../../../services/api";
 import { getTeamHex, getCircuitData } from "../../../utils/helpers";
 import { Flag, Spoiler, SkeletonCard } from "../../shared";
 import type { Race, PitStop } from "../../../types";
+import { Podium } from "./Podium";
 
 // One race weekend: /season?year=&round= (opened from the Calendar or a link).
 export const RacePage: React.FC<{
@@ -86,6 +87,10 @@ export const RacePage: React.FC<{
               )}
             </div>
           </header>
+
+          <Spoiler>
+            <Podium results={raceDetails.Results ?? []} />
+          </Spoiler>
 
           {/* Track Info Card */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
