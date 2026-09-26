@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { fetchData } from "../../../services/api";
-import { getTeamHex, getCircuitData } from "../../../utils/helpers";
+import { getTeamHex, getCircuitImg } from "../../../utils/helpers";
 import { Flag, Spoiler, SkeletonCard } from "../../shared";
 import type { Race, PitStop } from "../../../types";
 import { Podium } from "./Podium";
 import { ResultsTable } from "./ResultsTable";
+import { CircuitHistory } from "./CircuitHistory";
 
 // One race weekend: /season?year=&round= (opened from the Calendar or a link).
 export const RacePage: React.FC<{
@@ -42,10 +43,6 @@ export const RacePage: React.FC<{
 
   const stopsByDriver: Record<string, number> = {};
   for (const p of pitStops) stopsByDriver[p.driverId] = (stopsByDriver[p.driverId] || 0) + 1;
-
-  const circuitData = raceDetails
-    ? getCircuitData(raceDetails.Circuit.circuitId)
-    : { img: "", record: "N/A", mostWins: "N/A" };
 
   const idx = races.findIndex((r) => r.round === round);
   const prev = idx > 0 ? races[idx - 1] : null;
@@ -178,13 +175,13 @@ export const RacePage: React.FC<{
 
           {/* Circuit */}
           <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-            <div className="minimal-card p-0 overflow-hidden relative group h-64 md:h-auto">
-              {circuitData.img ? (
+            <div className="minimal-card p-0 overflow-hidden relative h-64 md:h-auto min-h-[240px]">
+              {getCircuitImg(raceDetails.Circuit.circuitId) ? (
                 <div className="absolute inset-0 bg-white p-4 flex items-center justify-center">
                   <img
-                    src={circuitData.img}
+                    src={getCircuitImg(raceDetails.Circuit.circuitId)!}
                     className="max-w-full max-h-full object-contain mix-blend-multiply opacity-80"
-                    alt="Track Layout"
+                    alt={`${raceDetails.Circuit.circuitName} layout`}
                   />
                 </div>
               ) : (
@@ -192,25 +189,12 @@ export const RacePage: React.FC<{
                   <i className="fas fa-road text-4xl"></i>
                 </div>
               )}
-              <div className="absolute bottom-0 left-0 right-0 bg-neutral-900/90 backdrop-blur-md p-4 border-t border-neutral-800">
-                <div className="flex justify-between items-start text-xs">
-                  <div>
-                    <div className="text-neutral-500 uppercase mb-1">
-                      Lap Record
-                    </div>
-                    <div className="text-white font-mono">
-                      {circuitData.record}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-neutral-500 uppercase mb-1">
-                      Most Wins
-                    </div>
-                    <div className="text-white">{circuitData.mostWins}</div>
-                  </div>
-                </div>
+              <div className="absolute bottom-0 inset-x-0 bg-neutral-900/90 backdrop-blur-md px-4 py-3 border-t border-neutral-800 text-xs text-neutral-300">
+                {raceDetails.Circuit.circuitName} · {raceDetails.Circuit.Location.locality},{" "}
+                {raceDetails.Circuit.Location.country}
               </div>
             </div>
+            <CircuitHistory circuitId={raceDetails.Circuit.circuitId} before={raceDetails.date} />
           </section>
         </>
       ) : (

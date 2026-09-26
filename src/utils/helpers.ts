@@ -90,134 +90,60 @@ const LOGO_IDS = new Set([
 export const getTeamLogo = (constructorId: string): string | null =>
   LOGO_IDS.has(constructorId) ? `/logos/${constructorId}.png` : null;
 
-export const getCircuitData = (
-  circuitId: string
-): { img: string; record: string; mostWins: string } => {
-  const data: Record<string, { img: string; record: string; mostWins: string }> =
-    {
-      bahrain: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Bahrain_Circuit.png",
-        record: "1:31.447 (Pedro de la Rosa, 2005)",
-        mostWins: "Lewis Hamilton (5)",
-      },
-      jeddah: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Saudi_Arabia_Circuit.png",
-        record: "1:30.734 (Lewis Hamilton, 2021)",
-        mostWins: "Max Verstappen (2), Oscar Piastri (2)",
-      },
-      albert_park: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Australia_Circuit.png",
-        record: "1:19.813 (Charles Leclerc, 2024)",
-        mostWins: "Michael Schumacher (4)",
-      },
-      suzuka: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Japan_Circuit.png",
-        record: "1:30.965 (Kimi Antonelli, 2025)",
-        mostWins: "Michael Schumacher (6)",
-      },
-      shanghai: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/China_Circuit.png",
-        record: "1:32.238 (Michael Schumacher, 2004)",
-        mostWins: "Lewis Hamilton (6)",
-      },
-      miami: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Miami_Circuit.png",
-        record: "1:29.708 (Max Verstappen, 2023)",
-        mostWins: "Max Verstappen (2), Oscar Piastri (2)",
-      },
-      imola: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Emilia_Romagna_Circuit.png",
-        record: "1:15.484 (Lewis Hamilton, 2020)",
-        mostWins: "Michael Schumacher (7)",
-      },
-      monaco: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Monaco_Circuit.png",
-        record: "1:12.909 (Lewis Hamilton, 2021)",
-        mostWins: "Ayrton Senna (6)",
-      },
-      villeneuve: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Canada_Circuit.png",
-        record: "1:13.078 (Valtteri Bottas, 2019)",
-        mostWins: "Michael Schumacher (7), Lewis Hamilton (7)",
-      },
-      catalunya: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Spain_Circuit.png",
-        record: "1:15.743 (Oscar Piastri, 2025)",
-        mostWins: "Michael Schumacher (6), Lewis Hamilton (6)",
-      },
-      red_bull_ring: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Austria_Circuit.png",
-        record: "1:07.924 (Oscar Piastri, 2025)",
-        mostWins: "Max Verstappen (5)",
-      },
-      silverstone: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Great_Britain_Circuit.png",
-        record: "1:27.097 (Max Verstappen, 2020)",
-        mostWins: "Lewis Hamilton (9)",
-      },
-      hungaroring: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Hungary_Circuit.png",
-        record: "1:16.627 (Lewis Hamilton, 2020)",
-        mostWins: "Lewis Hamilton (8)",
-      },
-      spa: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Belgium_Circuit.png",
-        record: "1:44.701 (Sergio Pérez, 2024)",
-        mostWins: "Michael Schumacher (6)",
-      },
-      zandvoort: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Netherlands_Circuit.png",
-        record: "1:11.097 (Lewis Hamilton, 2021)",
-        mostWins: "Jim Clark (4)",
-      },
-      monza: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Italy_Circuit.png",
-        record: "1:20.901 (Lando Norris, 2025)",
-        mostWins: "Michael Schumacher (5), Lewis Hamilton (5)",
-      },
-      baku: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Azerbaijan_Circuit.png",
-        record: "1:43.009 (Charles Leclerc, 2019)",
-        mostWins: "Sergio Perez (2), Max Verstappen (2)",
-      },
-      marina_bay: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Singapore_Circuit.png",
-        record: "1:33.808 (Lewis Hamilton, 2025)",
-        mostWins: "Sebastian Vettel (5)",
-      },
-      americas: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/USA_Circuit.png",
-        record: "1:36.169 (Charles Leclerc, 2019)",
-        mostWins: "Lewis Hamilton (5)",
-      },
-      rodriguez: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Mexico_Circuit.png",
-        record: "1:17.774 (Valtteri Bottas, 2021)",
-        mostWins: "Max Verstappen (5)",
-      },
-      interlagos: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Brazil_Circuit.png",
-        record: "1:10.540 (Valtteri Bottas, 2018)",
-        mostWins: "Alain Prost (6)",
-      },
-      vegas: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1699544976/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Las_Vegas_Circuit.png",
-        record: "1:33.365 (Max Verstappen, 2025)",
-        mostWins: "Max Verstappen (2)",
-      },
-      losail: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Qatar_Circuit.png",
-        record: "1:22.996 (Oscar Piastri, 2025)",
-        mostWins: "Lewis Hamilton (1), Max Verstappen (2)",
-      },
-      yas_marina: {
-        img: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Abu_Dhabi_Circuit.png",
-        record: "1:26.725 (Charles Leclerc, 2025)",
-        mostWins: "Lewis Hamilton (5), Max Verstappen (6)",
-      },
-    };
-  return data[circuitId] || { img: "", record: "N/A", mostWins: "N/A" };
+// Track maps by jolpi circuitId (hotlinked from formula1.com).
+const CIRCUIT_IMG: Record<string, string> = {
+  bahrain:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Bahrain_Circuit.png",
+  jeddah:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Saudi_Arabia_Circuit.png",
+  albert_park:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Australia_Circuit.png",
+  suzuka:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Japan_Circuit.png",
+  shanghai:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/China_Circuit.png",
+  miami:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Miami_Circuit.png",
+  imola:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Emilia_Romagna_Circuit.png",
+  monaco:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Monaco_Circuit.png",
+  villeneuve:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Canada_Circuit.png",
+  catalunya:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Spain_Circuit.png",
+  red_bull_ring:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Austria_Circuit.png",
+  silverstone:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Great_Britain_Circuit.png",
+  hungaroring:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Hungary_Circuit.png",
+  spa:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Belgium_Circuit.png",
+  zandvoort:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Netherlands_Circuit.png",
+  monza:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Italy_Circuit.png",
+  baku:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Azerbaijan_Circuit.png",
+  marina_bay:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Singapore_Circuit.png",
+  americas:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/USA_Circuit.png",
+  rodriguez:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Mexico_Circuit.png",
+  interlagos:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Brazil_Circuit.png",
+  vegas:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1699544976/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Las_Vegas_Circuit.png",
+  losail:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Qatar_Circuit.png",
+  yas_marina:
+    "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245035/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Abu_Dhabi_Circuit.png",
 };
+
+export const getCircuitImg = (circuitId: string): string | null =>
+  CIRCUIT_IMG[circuitId] ?? null;
 
 export const getCountryCode = (name: string): string | null => {
   const map: Record<string, string> = {
