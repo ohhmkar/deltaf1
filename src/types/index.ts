@@ -52,6 +52,7 @@ export interface Race {
   ThirdPractice?: Session;
   Qualifying?: Session;
   Sprint?: Session;
+  SprintQualifying?: Session;
   Results?: RaceResult[];
 }
 

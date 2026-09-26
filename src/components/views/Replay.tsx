@@ -15,10 +15,12 @@ import {
   OF1Position,
   OF1Stint,
   OF1Lap,
+  isLiveLocked,
 } from "../../services/openf1";
 import { useSearchParams } from "react-router";
 import { useTheme } from "../../context/ThemeContext";
-import { useToast } from "../shared";
+import { useToast, LiveLockNotice } from "../shared";
+import { compound } from "../../utils/helpers";
 
 const WINDOW_MS = 60_000; // location fetched in 60s chunks (~0.5MB each, all cars)
 const VIEW = 1000; // svg viewBox size
@@ -55,17 +57,6 @@ const gapAt = (arr: Gap[], t: number): number | string | null => {
   }
   return res;
 };
-
-// tyre compound colour + single-letter label
-const COMPOUND: Record<string, { c: string; l: string }> = {
-  SOFT: { c: "#ef4444", l: "S" },
-  MEDIUM: { c: "#eab308", l: "M" },
-  HARD: { c: "#e5e5e5", l: "H" },
-  INTERMEDIATE: { c: "#22c55e", l: "I" },
-  WET: { c: "#3b82f6", l: "W" },
-};
-const compound = (name: string) =>
-  COMPOUND[name?.toUpperCase()] || { c: "#525252", l: "?" };
 
 // border colour for a race-control event
 const flagColor = (e: OF1RaceControl): string => {
@@ -187,6 +178,7 @@ export const Replay: React.FC = () => {
   const [dragging, setDragging] = useState(false);
   const dragRef = useRef<{ x: number; y: number } | null>(null);
   const [status, setStatus] = useState("");
+  const [locked, setLocked] = useState(false); // OpenF1 401 during a live session
   const [, setVersion] = useState(0); // bump to re-render when a window loads while paused
 
   const points = useRef<Map<number, Pt[]>>(new Map());
@@ -206,6 +198,7 @@ export const Replay: React.FC = () => {
   useEffect(() => {
     let cancel = false;
     setStatus("Loading races…");
+    setLocked(false);
     fetchRaceSessions(year)
       .then((all) => {
         if (cancel) return;
@@ -225,7 +218,11 @@ export const Replay: React.FC = () => {
           );
         if (hit) loadSession(hit, p!.t * 1000);
       })
-      .catch(() => !cancel && setStatus("Failed to load races."));
+      .catch((e) => {
+        if (cancel) return;
+        setLocked(isLiveLocked(e));
+        setStatus(isLiveLocked(e) ? "" : "Failed to load races.");
+      });
     return () => {
       cancel = true;
     };
@@ -322,8 +319,11 @@ export const Replay: React.FC = () => {
         setTrackPath(buildPath(pts, b));
       }
       setStatus(pts.length ? "" : "No location data for this race.");
-    } catch {
-      if (token === loadToken.current) setStatus("Failed to load session.");
+    } catch (e) {
+      if (token === loadToken.current) {
+        setLocked(isLiveLocked(e));
+        setStatus(isLiveLocked(e) ? "" : "Failed to load session.");
+      }
     }
   };
 
@@ -647,6 +647,8 @@ export const Replay: React.FC = () => {
           <span className="text-neutral-500 text-sm self-center">{status}</span>
         )}
       </div>
+
+      {locked && <LiveLockNotice className="mb-6 max-w-2xl" />}
 
       {session && trackPath && (
         <div className="flex flex-col lg:flex-row gap-4 max-w-6xl mx-auto">

@@ -5,9 +5,10 @@ import { useTheme } from "../../context/ThemeContext";
 // Blurs race results while spoiler-free mode is on. "Reveal" uncovers this
 // block; "reveal all" uncovers every block on the current page until you
 // navigate elsewhere.
-export const Spoiler: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const Spoiler: React.FC<{
+  children: React.ReactNode;
+  tall?: boolean; // long sections: pin the buttons near the top, not mid-page
+}> = ({ children, tall }) => {
   const { spoilerFree, revealedPage, revealAll } = useTheme();
   const { pathname, search } = useLocation();
   const page = pathname + search;
@@ -18,7 +19,11 @@ export const Spoiler: React.FC<{ children: React.ReactNode }> = ({
       <div aria-hidden className="blur-lg pointer-events-none select-none">
         {children}
       </div>
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-xs font-medium">
+      <div
+        className={`absolute inset-0 flex flex-col items-center gap-2 text-xs font-medium ${
+          tall ? "justify-start pt-24" : "justify-center"
+        }`}
+      >
         <span className="text-neutral-300 light:text-neutral-700">
           <i className="fas fa-eye-slash mr-2"></i>Results hidden
         </span>
