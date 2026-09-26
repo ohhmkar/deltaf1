@@ -35,8 +35,8 @@ const findLive = (races: Race[]): Live => {
   return null;
 };
 
-// Shown when OpenF1 answers 401: it blocks all public access, past races
-// included, while any F1 session is live.
+// Shown when OpenF1 can't be reached: during a live F1 session it blocks all
+// public access (past races included); otherwise it's likely the connection.
 export const LiveLockNotice: React.FC<{ className?: string }> = ({ className = "" }) => {
   const [live, setLive] = useState<Live | undefined>(undefined);
   useEffect(() => {
@@ -60,8 +60,8 @@ export const LiveLockNotice: React.FC<{ className?: string }> = ({ className = "
           </>
         ) : (
           <>
-            OpenF1, the data source for replays and charts, pauses public access while an F1
-            session is live. Try again once it ends.
+            Couldn't reach OpenF1, the data source for replays and charts. Check your
+            connection and reload. OpenF1 also pauses public access during live F1 sessions.
           </>
         )}
       </div>

@@ -11,13 +11,17 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 let queue: Promise<unknown> = Promise.resolve();
 
 // While any F1 session is live, OpenF1 answers every unauthenticated request
-// (past races included) with 401 until it ends.
+// (past races included) with a 401 that has no CORS header, so in a browser
+// it surfaces as a network error, not a status. Both count as "locked";
+// LiveLockNotice checks the schedule to tell a lockout from being offline.
 export const LIVE_LOCKED = "OpenF1 is locked while an F1 session is live";
 export const isLiveLocked = (e: unknown) => e instanceof Error && e.message === LIVE_LOCKED;
 
 async function rawGet<T>(path: string): Promise<T> {
   for (let attempt = 0; attempt < 4; attempt++) {
-    const res = await fetch(`${BASE}${path}`);
+    const res = await fetch(`${BASE}${path}`).catch(() => {
+      throw new Error(LIVE_LOCKED);
+    });
     if (res.status === 429) {
       await sleep(700 * (attempt + 1));
       continue;
