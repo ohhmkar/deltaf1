@@ -145,11 +145,16 @@ export const Replay: React.FC = () => {
   const year0 = new Date().getFullYear();
   const years = Array.from({ length: year0 - 2022 }, (_, i) => 2023 + i);
 
-  // ?year=&race=&t= makes a moment shareable; race/t are applied once, on load
+  // ?year=&race=&t= makes a moment shareable; ?date= (a race's YYYY-MM-DD,
+  // from the Calendar) picks a race too. Applied once, on load.
   const [params, setParams] = useSearchParams();
   const pending = useRef(
-    params.get("race")
-      ? { race: Number(params.get("race")), t: Number(params.get("t")) || 0 }
+    params.get("race") || params.get("date")
+      ? {
+          race: Number(params.get("race")),
+          date: params.get("date"),
+          t: Number(params.get("t")) || 0,
+        }
       : null
   );
   const { spoilerFree } = useTheme();
@@ -191,6 +196,7 @@ export const Replay: React.FC = () => {
   const loadedGaps = useRef<Set<number>>(new Set());
   const inflightGaps = useRef<Set<number>>(new Set());
   const cursorRef = useRef(0);
+  const loadToken = useRef(0); // bumps per loadSession so a slower earlier load can't overwrite a newer one
   const activeItemRef = useRef<HTMLLIElement>(null);
 
   const startMs = session ? Date.parse(session.date_start) : 0;
@@ -212,7 +218,11 @@ export const Replay: React.FC = () => {
         setStatus(s.length ? "" : "No completed races for this year yet.");
         const p = pending.current;
         pending.current = null;
-        const hit = p && s.find((x) => x.session_key === p.race);
+        const hit =
+          p &&
+          s.find((x) =>
+            p.race ? x.session_key === p.race : x.date_start.slice(0, 10) === p.date
+          );
         if (hit) loadSession(hit, p!.t * 1000);
       })
       .catch(() => !cancel && setStatus("Failed to load races."));
@@ -223,6 +233,7 @@ export const Replay: React.FC = () => {
 
   // --- load a session: reset buffers, fetch drivers + track outline ---
   const loadSession = async (s: OF1Session, at = 0) => {
+    const token = ++loadToken.current;
     setParams({ year: String(year), race: String(s.session_key) }, { replace: true });
     const start = Math.max(
       0,
@@ -261,6 +272,7 @@ export const Replay: React.FC = () => {
         fetchStints(s.session_key).catch(() => [] as OF1Stint[]),
         fetchLaps(s.session_key).catch(() => [] as OF1Lap[]),
       ]);
+      if (token !== loadToken.current) return;
       setDrivers(drv);
       setFeed(
         rc
@@ -311,7 +323,7 @@ export const Replay: React.FC = () => {
       }
       setStatus(pts.length ? "" : "No location data for this race.");
     } catch {
-      setStatus("Failed to load session.");
+      if (token === loadToken.current) setStatus("Failed to load session.");
     }
   };
 
@@ -333,26 +345,29 @@ export const Replay: React.FC = () => {
   const ensureWindow = (idx: number) => {
     if (!session || idx < 0 || idx * WINDOW_MS > duration) return;
     if (loaded.current.has(idx) || inflight.current.has(idx)) return;
-    inflight.current.add(idx);
+    // bind this session's buffers now: loadSession swaps in new ones, and a
+    // late response must not land in (or mark as loaded) the next race's
+    const pts = points.current, done = loaded.current, busy = inflight.current;
+    busy.add(idx);
     const from = new Date(startMs + idx * WINDOW_MS);
     const to = new Date(startMs + (idx + 1) * WINDOW_MS);
     fetchLocations(session.session_key, from, to)
       .then((locs) => {
         for (const l of locs) {
           if (!l.x && !l.y) continue;
-          const arr = points.current.get(l.driver_number) || [];
+          const arr = pts.get(l.driver_number) || [];
           arr.push({ t: Date.parse(l.date), x: l.x, y: l.y });
-          points.current.set(l.driver_number, arr);
+          pts.set(l.driver_number, arr);
         }
-        for (const arr of points.current.values()) arr.sort((a, b) => a.t - b.t);
+        for (const arr of pts.values()) arr.sort((a, b) => a.t - b.t);
         setVersion((v) => v + 1);
       })
       .catch(() => {})
       // mark attempted either way so a failed/empty window isn't refetched every
       // cursor tick (that storm is what trips OpenF1's rate limit)
       .finally(() => {
-        loaded.current.add(idx);
-        inflight.current.delete(idx);
+        done.add(idx);
+        busy.delete(idx);
       });
   };
 
@@ -360,23 +375,24 @@ export const Replay: React.FC = () => {
   const ensureGaps = (idx: number) => {
     if (!session || idx < 0 || idx * WINDOW_MS > duration) return;
     if (loadedGaps.current.has(idx) || inflightGaps.current.has(idx)) return;
-    inflightGaps.current.add(idx);
+    const gm = gaps.current, done = loadedGaps.current, busy = inflightGaps.current;
+    busy.add(idx);
     const from = new Date(startMs + idx * WINDOW_MS);
     const to = new Date(startMs + (idx + 1) * WINDOW_MS);
     fetchIntervals(session.session_key, from, to)
       .then((rows) => {
         for (const r of rows) {
-          const arr = gaps.current.get(r.driver_number) || [];
+          const arr = gm.get(r.driver_number) || [];
           arr.push({ t: Date.parse(r.date), gap: r.gap_to_leader });
-          gaps.current.set(r.driver_number, arr);
+          gm.set(r.driver_number, arr);
         }
-        for (const arr of gaps.current.values()) arr.sort((a, b) => a.t - b.t);
+        for (const arr of gm.values()) arr.sort((a, b) => a.t - b.t);
         setVersion((v) => v + 1);
       })
       .catch(() => {})
       .finally(() => {
-        loadedGaps.current.add(idx);
-        inflightGaps.current.delete(idx);
+        done.add(idx);
+        busy.delete(idx);
       });
   };
 
@@ -596,6 +612,7 @@ export const Replay: React.FC = () => {
       <div className="flex flex-wrap gap-3 mb-6">
         <select
           value={year}
+          aria-label="Season"
           onChange={(e) => {
             setYear(Number(e.target.value));
             setParams({ year: e.target.value }, { replace: true });
@@ -610,6 +627,7 @@ export const Replay: React.FC = () => {
         </select>
         <select
           value={session?.session_key ?? ""}
+          aria-label="Race"
           onChange={(e) => {
             const s = sessions.find(
               (x) => x.session_key === Number(e.target.value)
@@ -639,6 +657,7 @@ export const Replay: React.FC = () => {
           >
             <button
               onClick={toggle3D}
+              aria-label={threeD ? "Switch to 2D view" : "Switch to 3D view"}
               className="absolute top-3 right-3 z-10 px-3 py-1 rounded-md text-xs font-semibold bg-neutral-800 light:bg-neutral-200 text-neutral-200 light:text-neutral-800 hover:bg-neutral-700"
             >
               {threeD ? "3D" : "2D"}
@@ -720,19 +739,38 @@ export const Replay: React.FC = () => {
             >
               <i className={`fas ${playing ? "fa-pause" : "fa-play"}`}></i>
             </button>
-            <input
-              type="range"
-              min={0}
-              max={duration}
-              value={cursor}
-              onChange={(e) => scrub(Number(e.target.value))}
-              className="flex-1 accent-red-500"
-            />
+            <div className="flex-1 relative">
+              {/* lap ticks: every lap faint, every 10th stronger */}
+              {duration > 0 && (
+                <div aria-hidden className="absolute inset-x-0 -top-2 h-1.5 pointer-events-none">
+                  {lapStarts.map(({ lap, t }) => (
+                    <span
+                      key={lap}
+                      className={`absolute top-0 w-px h-full ${
+                        lap % 10 === 0 ? "bg-neutral-400" : "bg-neutral-700 light:bg-neutral-300"
+                      }`}
+                      style={{ left: `${((t - startMs) / duration) * 100}%` }}
+                    />
+                  ))}
+                </div>
+              )}
+              <input
+                type="range"
+                min={0}
+                max={duration}
+                value={cursor}
+                onChange={(e) => scrub(Number(e.target.value))}
+                aria-label="Race timeline"
+                aria-valuetext={`Lap ${currentLap || 0} of ${totalLaps || "?"}, ${mmss(cursor)}`}
+                className="w-full accent-red-500"
+              />
+            </div>
             <span className="text-neutral-400 text-sm font-mono tabular-nums shrink-0">
               {mmss(cursor)} / {mmss(duration)}
             </span>
             <select
               value={speed}
+              aria-label="Playback speed"
               onChange={(e) => setSpeed(Number(e.target.value))}
               className="bg-neutral-900 light:bg-white border border-neutral-800 light:border-neutral-300 rounded-md px-2 py-1 text-sm text-neutral-200 light:text-neutral-800"
             >
@@ -857,12 +895,11 @@ export const Replay: React.FC = () => {
                   const past = i <= activeIdx;
                   if (spoilerFree && !past) return null;
                   return (
-                    <li
-                      key={i}
-                      ref={i === activeIdx ? activeItemRef : undefined}
+                    <li key={i} ref={i === activeIdx ? activeItemRef : undefined}>
+                    <button
                       onClick={() => scrub(Math.max(0, e.t - startMs))}
                       title="Jump to this moment"
-                      className={`flex gap-2 rounded-md px-2 py-1.5 text-xs cursor-pointer hover:bg-neutral-800 light:hover:bg-neutral-100 transition-opacity ${
+                      className={`w-full text-left flex gap-2 rounded-md px-2 py-1.5 text-xs cursor-pointer hover:bg-neutral-800 light:hover:bg-neutral-100 transition-opacity ${
                         past ? "opacity-100" : "opacity-40"
                       } ${i === activeIdx ? "bg-neutral-800/60 light:bg-neutral-100" : ""}`}
                     >
@@ -879,6 +916,7 @@ export const Replay: React.FC = () => {
                           {e.message}
                         </div>
                       </div>
+                    </button>
                     </li>
                   );
                 })}

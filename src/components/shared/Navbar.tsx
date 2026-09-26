@@ -6,11 +6,11 @@ export const Navbar: React.FC = () => {
   const { theme, toggleTheme, spoilerFree, toggleSpoilerFree } = useTheme();
 
   const navItems = [
-    { to: "/", icon: "fa-chart-pie", label: "Dashboard" },
-    { to: "/standings", icon: "fa-list", label: "Standings" },
-    { to: "/season", icon: "fa-calendar", label: "Calendar" },
-    { to: "/grid", icon: "fa-th", label: "The Grid" },
-    { to: "/replay", icon: "fa-circle-play", label: "Replay" },
+    { to: "/", icon: "fa-chart-pie", label: "Dashboard", short: "Home" },
+    { to: "/standings", icon: "fa-list", label: "Standings", short: "Standings" },
+    { to: "/season", icon: "fa-calendar", label: "Calendar", short: "Calendar" },
+    { to: "/grid", icon: "fa-th", label: "The Grid", short: "Grid" },
+    { to: "/replay", icon: "fa-circle-play", label: "Replay", short: "Replay" },
   ];
 
   return (
@@ -24,14 +24,14 @@ export const Navbar: React.FC = () => {
         </span>
       </div>
 
-      <div className="flex md:flex-col justify-around w-full md:w-full flex-1 md:justify-center md:space-y-2 px-2">
+      <div className="flex md:flex-col justify-around w-full md:w-full flex-1 md:justify-center md:space-y-2 px-1 md:px-2">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.to === "/"}
             className={({ isActive }) =>
-              `flex items-center justify-center md:justify-start w-10 md:w-full h-10 md:h-12 rounded-md transition-all duration-200 md:px-3 overflow-hidden ${
+              `flex flex-col md:flex-row items-center justify-center md:justify-start flex-1 md:flex-none md:w-full h-12 rounded-md transition-all duration-200 md:px-3 overflow-hidden ${
                 isActive
                   ? "text-white light:text-neutral-900 bg-neutral-800 light:bg-neutral-200"
                   : "text-neutral-500 light:text-neutral-400 hover:text-neutral-300 light:hover:text-neutral-700 hover:bg-neutral-900/50 light:hover:bg-neutral-100"
@@ -41,6 +41,9 @@ export const Navbar: React.FC = () => {
             <div className="w-6 flex justify-center shrink-0">
               <i className={`fas ${item.icon} text-sm`}></i>
             </div>
+            <span className="md:hidden text-[10px] leading-none mt-1">
+              {item.short}
+            </span>
             <span className="hidden md:block ml-3 text-sm font-medium whitespace-nowrap opacity-0 -translate-x-2 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 delay-100">
               {item.label}
             </span>
@@ -54,6 +57,7 @@ export const Navbar: React.FC = () => {
         <button
           onClick={toggleSpoilerFree}
           aria-pressed={spoilerFree}
+          aria-label="Spoiler-free mode"
           className={`flex items-center justify-center md:justify-start w-10 md:w-full h-10 md:h-10 rounded-md transition-all duration-200 md:px-3 overflow-hidden hover:bg-neutral-900/50 light:hover:bg-neutral-100 ${
             spoilerFree
               ? "text-red-400"
@@ -72,6 +76,7 @@ export const Navbar: React.FC = () => {
         {/* Theme Toggle Button */}
         <button
           onClick={toggleTheme}
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           className="flex items-center justify-center md:justify-start w-10 md:w-full h-10 md:h-10 rounded-md transition-all duration-200 md:px-3 overflow-hidden text-neutral-500 light:text-neutral-400 hover:text-neutral-300 light:hover:text-neutral-700 hover:bg-neutral-900/50 light:hover:bg-neutral-100"
           title={
             theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
@@ -104,7 +109,8 @@ export const Navbar: React.FC = () => {
       <button
         onClick={toggleSpoilerFree}
         aria-pressed={spoilerFree}
-        className={`md:hidden flex items-center justify-center w-10 h-10 rounded-md transition-all duration-200 ${
+        aria-label="Spoiler-free mode"
+        className={`md:hidden flex shrink-0 items-center justify-center w-9 h-10 rounded-md transition-all duration-200 ${
           spoilerFree ? "text-red-400" : "text-neutral-500 light:text-neutral-400"
         }`}
         title={spoilerFree ? "Show race results" : "Hide race results (spoiler-free)"}
@@ -115,7 +121,8 @@ export const Navbar: React.FC = () => {
       {/* Mobile Theme Toggle */}
       <button
         onClick={toggleTheme}
-        className="md:hidden flex items-center justify-center w-10 h-10 rounded-md transition-all duration-200 text-neutral-500 light:text-neutral-400 hover:text-neutral-300 light:hover:text-neutral-700"
+        aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        className="md:hidden flex shrink-0 items-center justify-center w-9 h-10 rounded-md transition-all duration-200 text-neutral-500 light:text-neutral-400 hover:text-neutral-300 light:hover:text-neutral-700"
         title={
           theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
         }

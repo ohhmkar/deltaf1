@@ -88,7 +88,7 @@ export interface PitStop {
 export interface CareerStats {
   wins: number;
   poles: number;
-  championships: number;
+  titleYears: number[];
   defending: boolean;
 }
 

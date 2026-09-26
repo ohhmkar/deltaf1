@@ -116,6 +116,7 @@ const ToastItem: React.FC<{
       <p className="text-white text-sm flex-1">{toast.message}</p>
       <button
         onClick={() => onClose(toast.id)}
+        aria-label="Dismiss"
         className="text-neutral-400 hover:text-white transition-colors"
       >
         <i className="fas fa-times text-sm"></i>

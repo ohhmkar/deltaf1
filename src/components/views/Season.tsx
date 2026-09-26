@@ -1,19 +1,49 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { fetchData } from "../../services/api";
 import {
   getTeamHex,
   getCircuitData,
   formatDateLocal,
+  raceStart,
+  localTzLabel,
 } from "../../utils/helpers";
-import { Flag, Spoiler } from "../shared";
+import { Flag, Spoiler, SkeletonCard } from "../shared";
 import type { Race, PitStop } from "../../types";
 
 export const Season: React.FC = () => {
   const currentYear = new Date().getFullYear();
-  const [year, setYear] = useState<number>(currentYear);
+  // ?year= and ?round= live in the URL so refresh/back/share keep them
+  const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const yearParam = Number(params.get("year"));
+  const year =
+    yearParam >= 1950 && yearParam <= currentYear ? yearParam : currentYear;
+  const setYear = (y: number) =>
+    setParams(y === currentYear ? {} : { year: String(y) }, { replace: true });
+  const selectedRound = params.get("round");
+  const openedHere = useRef(false); // opened by a click (pushed) vs deep link
+  const openRace = (round: string) => {
+    openedHere.current = true;
+    setParams((p) => {
+      p.set("round", round);
+      return p;
+    });
+  };
+  const backToCalendar = () => {
+    if (openedHere.current) navigate(-1);
+    else
+      setParams(
+        (p) => {
+          p.delete("round");
+          return p;
+        },
+        { replace: true }
+      );
+    openedHere.current = false;
+  };
   const [races, setRaces] = useState<Race[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedRound, setSelectedRound] = useState<string | null>(null);
   const [raceDetails, setRaceDetails] = useState<Race | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [pitStops, setPitStops] = useState<PitStop[]>([]);
@@ -24,57 +54,58 @@ export const Season: React.FC = () => {
   );
 
   useEffect(() => {
+    let stale = false; // a slower response for a previous year must not win
     const load = async () => {
       setLoading(true);
       setRaces([]);
-      setSelectedRound(null);
       try {
         const endpoint =
           year === currentYear ? "/current.json" : `/${year}.json`;
         const data = await fetchData(endpoint);
+        if (stale) return;
         if (data && data.RaceTable) {
           setRaces(data.RaceTable.Races);
         }
       } catch (e) {
         console.error(e);
       }
-      setLoading(false);
+      if (!stale) setLoading(false);
     };
     load();
+    return () => {
+      stale = true;
+    };
   }, [year]);
 
-  const handleRaceClick = async (race: Race) => {
-    const raceDate = new Date(`${race.date}T${race.time}`);
-    // Allow clicking for past years or past races in current year
-    if (year === currentYear && raceDate > new Date()) return;
-
+  // results + pit stops for ?round= (a click or a shared URL)
+  useEffect(() => {
+    if (!selectedRound) return;
+    let stale = false;
     setLoadingDetails(true);
-    setSelectedRound(race.round);
     setRaceDetails(null);
     setPitStops([]);
+    Promise.all([
+      fetchData(`/${year}/${selectedRound}/results.json`),
+      fetchData(`/${year}/${selectedRound}/pitstops.json?limit=100`),
+    ])
+      .then(([resData, pitData]) => {
+        if (stale) return;
+        setRaceDetails(resData?.RaceTable?.Races[0] ?? null);
+        setPitStops(pitData?.RaceTable?.Races[0]?.PitStops ?? []);
+      })
+      .catch((e) => console.error(e))
+      .finally(() => !stale && setLoadingDetails(false));
+    return () => {
+      stale = true;
+    };
+  }, [year, selectedRound]);
 
-    try {
-      const [resData, pitData] = await Promise.all([
-        fetchData(`/${race.season}/${race.round}/results.json`),
-        fetchData(`/${race.season}/${race.round}/pitstops.json?limit=100`),
-      ]);
-
-      if (resData && resData.RaceTable && resData.RaceTable.Races.length > 0) {
-        setRaceDetails(resData.RaceTable.Races[0]);
-      }
-      if (pitData && pitData.RaceTable && pitData.RaceTable.Races.length > 0) {
-        setPitStops(pitData.RaceTable.Races[0].PitStops);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    setLoadingDetails(false);
-  };
-
-  if (loading)
+  if (loading && !selectedRound)
     return (
-      <div className="flex justify-center items-center h-full">
-        <div className="loader"></div>
+      <div className="p-6 md:p-16 max-w-5xl mx-auto h-screen overflow-y-auto pb-24 space-y-4">
+        {Array.from({ length: 8 }, (_, i) => (
+          <SkeletonCard key={i} />
+        ))}
       </div>
     );
 
@@ -86,7 +117,7 @@ export const Season: React.FC = () => {
     return (
       <div className="p-6 md:p-16 max-w-5xl mx-auto h-screen overflow-y-auto fade-in pb-24">
         <button
-          onClick={() => setSelectedRound(null)}
+          onClick={backToCalendar}
           className="mb-6 text-neutral-500 hover:text-white flex items-center transition-colors text-sm group"
         >
           <i className="fas fa-arrow-left mr-2 group-hover:-translate-x-1 transition-transform"></i>{" "}
@@ -94,8 +125,12 @@ export const Season: React.FC = () => {
         </button>
 
         {loadingDetails ? (
-          <div className="flex justify-center py-12">
-            <div className="loader"></div>
+          <div className="space-y-6">
+            <SkeletonCard className="min-h-[120px]" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <SkeletonCard className="min-h-[220px]" />
+              <SkeletonCard className="min-h-[220px]" />
+            </div>
           </div>
         ) : raceDetails ? (
           <>
@@ -106,12 +141,23 @@ export const Season: React.FC = () => {
               <h1 className="text-3xl font-medium tracking-tight text-white mb-2">
                 {raceDetails.raceName}
               </h1>
-              <div className="flex items-center text-neutral-400 text-sm">
-                <Flag
-                  country={raceDetails.Circuit.Location.country}
-                  className="w-4 h-auto mr-2 rounded shadow-sm"
-                />
-                {raceDetails.Circuit.circuitName}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-3 text-neutral-400 text-sm">
+                <span className="flex items-center">
+                  <Flag
+                    country={raceDetails.Circuit.Location.country}
+                    className="w-4 h-auto mr-2 rounded shadow-sm"
+                  />
+                  {raceDetails.Circuit.circuitName}
+                </span>
+                {/* OpenF1 (Replay's source) covers 2023 on; matched by race date */}
+                {parseInt(raceDetails.season) >= 2023 && (
+                  <Link
+                    to={`/replay?year=${raceDetails.season}&date=${raceDetails.date}`}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-neutral-800 text-neutral-200 hover:bg-neutral-700 text-xs font-medium"
+                  >
+                    <i className="fas fa-circle-play"></i> Watch replay
+                  </Link>
+                )}
               </div>
             </header>
 
@@ -348,7 +394,9 @@ export const Season: React.FC = () => {
           <h1 className="text-2xl font-medium tracking-tight text-white mb-1">
             Calendar
           </h1>
-          <p className="text-neutral-500 text-sm">{year} Season Schedule</p>
+          <p className="text-neutral-500 text-sm">
+            {year} Season Schedule · times in {localTzLabel()}
+          </p>
         </div>
         <div className="relative group">
           <select
@@ -372,7 +420,7 @@ export const Season: React.FC = () => {
 
       <div className="grid grid-cols-1 gap-4">
         {races.map((r) => {
-          const raceDate = new Date(`${r.date}T${r.time}`);
+          const raceDate = raceStart(r);
           const isPast = year < currentYear || raceDate < new Date();
           const month = raceDate.toLocaleString("default", { month: "short" });
           const day = raceDate.getDate();
@@ -382,10 +430,11 @@ export const Season: React.FC = () => {
             raceTime === "TBA" ? "TBA" : raceTime.split(" ")[1];
 
           return (
-            <div
+            <button
               key={r.round}
-              onClick={() => isPast && handleRaceClick(r)}
-              className={`minimal-card p-6 flex flex-col md:flex-row items-start md:items-center justify-between ${
+              onClick={() => openRace(r.round)}
+              disabled={!isPast}
+              className={`minimal-card w-full text-left p-6 flex flex-col md:flex-row items-start md:items-center justify-between ${
                 isPast
                   ? "hover:bg-neutral-900/50 cursor-pointer transition-colors group"
                   : "opacity-80"
@@ -469,7 +518,7 @@ export const Season: React.FC = () => {
                   )}
                 </div>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>

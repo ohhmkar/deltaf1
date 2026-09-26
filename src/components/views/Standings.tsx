@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { fetchData } from "../../services/api";
 import { getTeamHex } from "../../utils/helpers";
-import { TeamLogo, Flag } from "../shared";
+import { TeamLogo, Flag, Modal, SkeletonCard } from "../shared";
 import type { DriverStanding, ConstructorStanding } from "../../types";
 
 type StandingsType = "drivers" | "constructors" | "teammate";
@@ -14,16 +14,44 @@ export const Standings: React.FC = () => {
   const type: StandingsType = STANDINGS_TYPES.includes(typeParam as StandingsType)
     ? (typeParam as StandingsType)
     : "drivers";
-  const setType = (next: StandingsType) => navigate(`/standings/${next}`);
   const currentYear = new Date().getFullYear();
-  const [year, setYear] = useState<number>(currentYear);
+  // ?year= and ?driver= live in the URL so refresh/back/share keep them
+  const [params, setParams] = useSearchParams();
+  const yearParam = Number(params.get("year"));
+  const year =
+    yearParam >= 1950 && yearParam <= currentYear ? yearParam : currentYear;
+  const yearQuery = year === currentYear ? "" : `?year=${year}`;
+  const setYear = (y: number) =>
+    setParams(y === currentYear ? {} : { year: String(y) }, { replace: true });
+  const setType = (next: StandingsType) =>
+    navigate(`/standings/${next}${yearQuery}`);
+  const driverId = params.get("driver");
+  const openedHere = useRef(false); // opened by a click (pushed) vs deep link
+  const openDriver = (id: string) => {
+    openedHere.current = true;
+    setParams((p) => {
+      p.set("driver", id);
+      return p;
+    });
+  };
+  const closeDriver = () => {
+    if (openedHere.current) navigate(-1); // so Back doesn't reopen it
+    else
+      setParams(
+        (p) => {
+          p.delete("driver");
+          return p;
+        },
+        { replace: true }
+      );
+    openedHere.current = false;
+  };
   const [drivers, setDrivers] = useState<DriverStanding[]>([]);
   const [constructors, setConstructors] = useState<ConstructorStanding[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [selectedDriver, setSelectedDriver] = useState<DriverStanding | null>(
-    null
-  );
+  const selectedDriver =
+    drivers.find((d) => d.Driver.driverId === driverId) ?? null;
   const [driverResults, setDriverResults] = useState<any[]>([]);
   const [resultsLoading, setResultsLoading] = useState(false);
 
@@ -39,6 +67,7 @@ export const Standings: React.FC = () => {
   );
 
   useEffect(() => {
+    let stale = false; // a slower response for a previous year must not win
     const load = async () => {
       setLoading(true);
       setDrivers([]);
@@ -50,6 +79,7 @@ export const Standings: React.FC = () => {
           fetchData(`/${year}/driverStandings.json`),
           fetchData(`/${year}/constructorStandings.json`),
         ]);
+        if (stale) return;
         if (dData && dData.StandingsTable.StandingsLists.length > 0) {
           setDrivers(dData.StandingsTable.StandingsLists[0].DriverStandings);
         }
@@ -61,9 +91,12 @@ export const Standings: React.FC = () => {
       } catch (e) {
         console.error("Error fetching standings", e);
       }
-      setLoading(false);
+      if (!stale) setLoading(false);
     };
     load();
+    return () => {
+      stale = true;
+    };
   }, [year]);
 
   const handleRowClick = async (item: DriverStanding | ConstructorStanding) => {
@@ -80,25 +113,23 @@ export const Standings: React.FC = () => {
       return;
     }
 
-    if ("Driver" in item) {
-      setSelectedDriver(item as DriverStanding);
-      setResultsLoading(true);
-      try {
-        const data = await fetchData(
-          `/${year}/drivers/${item.Driver.driverId}/results.json`
-        );
-        if (data && data.RaceTable && data.RaceTable.Races) {
-          setDriverResults(data.RaceTable.Races);
-        } else {
-          setDriverResults([]);
-        }
-      } catch (e) {
-        console.error(e);
-        setDriverResults([]);
-      }
-      setResultsLoading(false);
-    }
+    if ("Driver" in item) openDriver(item.Driver.driverId);
   };
+
+  // results for the driver in ?driver= (a click, a Grid link, or a shared URL)
+  useEffect(() => {
+    if (!driverId) return;
+    let stale = false;
+    setResultsLoading(true);
+    setDriverResults([]);
+    fetchData(`/${year}/drivers/${driverId}/results.json`)
+      .then((data) => !stale && setDriverResults(data?.RaceTable?.Races ?? []))
+      .catch((e) => console.error(e))
+      .finally(() => !stale && setResultsLoading(false));
+    return () => {
+      stale = true;
+    };
+  }, [year, driverId]);
 
   const handleCompare = async () => {
     setShowCompareModal(true);
@@ -201,7 +232,7 @@ export const Standings: React.FC = () => {
             y1={h - padding}
             x2={w - padding}
             y2={h - padding}
-            stroke="#404040"
+            style={{ stroke: "var(--chart-axis)" }}
             strokeWidth="1"
           />
           <line
@@ -209,7 +240,7 @@ export const Standings: React.FC = () => {
             y1={padding}
             x2={padding}
             y2={h - padding}
-            stroke="#404040"
+            style={{ stroke: "var(--chart-axis)" }}
             strokeWidth="1"
           />
           <text
@@ -253,7 +284,7 @@ export const Standings: React.FC = () => {
                     cx={getX(p.round)}
                     cy={getY(p.cumulative)}
                     r="3"
-                    fill="#171717"
+                    style={{ fill: "var(--chart-bg)" }}
                     stroke={series.color}
                     strokeWidth="1.5"
                   />
@@ -343,7 +374,7 @@ export const Standings: React.FC = () => {
         posText === "R" || posText === "W"
           ? 22
           : parseInt(r.Results[0].position);
-      return { x: i, y: pos, label: posText === "R" ? "DNF" : pos };
+      return { x: i, y: pos, label: pos === 22 ? "DNF" : `P${pos}` };
     });
 
     const w = 300;
@@ -385,7 +416,7 @@ export const Standings: React.FC = () => {
               y1={h * 0.45}
               x2={w}
               y2={h * 0.45}
-              stroke="#262626"
+              style={{ stroke: "var(--chart-grid)" }}
               strokeWidth="0.5"
               strokeDasharray="2 2"
             />
@@ -394,7 +425,7 @@ export const Standings: React.FC = () => {
               y1={h * 0.9}
               x2={w}
               y2={h * 0.9}
-              stroke="#262626"
+              style={{ stroke: "var(--chart-grid)" }}
               strokeWidth="0.5"
               strokeDasharray="2 2"
             />
@@ -414,7 +445,7 @@ export const Standings: React.FC = () => {
                 cx={i * xStep}
                 cy={(p.y / 22) * h}
                 r="3"
-                fill="#171717"
+                style={{ fill: "var(--chart-bg)" }}
                 stroke={color}
                 strokeWidth="2"
                 className="transition-all duration-200"
@@ -436,7 +467,7 @@ export const Standings: React.FC = () => {
                       : "translateX(-50%)",
                 }}
               >
-                {p.label === 22 ? "DNF" : `P${p.label}`}
+                {p.label}
               </div>
             ))}
           </div>
@@ -602,8 +633,10 @@ export const Standings: React.FC = () => {
       )}
 
       {loading ? (
-        <div className="flex justify-center p-12">
-          <div className="loader"></div>
+        <div className="space-y-3">
+          {Array.from({ length: 8 }, (_, i) => (
+            <SkeletonCard key={i} />
+          ))}
         </div>
       ) : (
         <>
@@ -668,10 +701,11 @@ export const Standings: React.FC = () => {
           ) : (
             <div className="space-y-3">
               {drivers.map((d) => (
-                <div
+                <button
                   key={d.Driver.driverId}
                   onClick={() => handleRowClick(d)}
-                  className={`flex items-center justify-between p-4 rounded-lg border border-neutral-800 hover:border-neutral-700 bg-neutral-900/30 transition-colors cursor-pointer ${
+                  aria-pressed={isCompareMode ? selectedIds.includes(d.Driver.driverId) : undefined}
+                  className={`w-full text-left flex items-center justify-between p-4 rounded-lg border border-neutral-800 hover:border-neutral-700 bg-neutral-900/30 transition-colors cursor-pointer ${
                     isCompareMode && selectedIds.includes(d.Driver.driverId)
                       ? "border-white/50 bg-neutral-800/50"
                       : ""
@@ -731,7 +765,7 @@ export const Standings: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
@@ -739,21 +773,11 @@ export const Standings: React.FC = () => {
       )}
 
       {selectedDriver && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm fade-in"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setSelectedDriver(null);
-          }}
+        <Modal
+          label={`${selectedDriver.Driver.givenName} ${selectedDriver.Driver.familyName}, ${year} season`}
+          onClose={closeDriver}
+          className="max-w-lg"
         >
-          <div className="bg-neutral-900 border border-neutral-700 rounded-xl max-w-lg w-full p-6 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-white/5 to-transparent rounded-bl-full pointer-events-none"></div>
-
-            <button
-              onClick={() => setSelectedDriver(null)}
-              className="absolute top-4 right-4 text-neutral-500 hover:text-white z-10"
-            >
-              <i className="fas fa-times"></i>
-            </button>
 
             <div className="flex items-center space-x-5 mb-8 relative z-10">
               <div className="w-20 h-20 rounded-full flex items-center justify-center bg-neutral-800 border border-neutral-600 text-3xl font-bold text-white shadow-lg">
@@ -840,8 +864,7 @@ export const Standings: React.FC = () => {
               </div>
               {renderFormChart()}
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {isCompareMode && selectedIds.length > 1 && (
@@ -856,31 +879,22 @@ export const Standings: React.FC = () => {
       )}
 
       {showCompareModal && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm fade-in"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowCompareModal(false);
-          }}
+        <Modal
+          label="Driver comparison"
+          onClose={() => setShowCompareModal(false)}
+          className="max-w-3xl"
         >
-          <div className="bg-neutral-900 border border-neutral-700 rounded-xl max-w-3xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
+            <div className="mb-6 pr-10">
               <h2 className="text-xl font-bold text-white">
                 Driver Comparison
               </h2>
-              <button
-                onClick={() => setShowCompareModal(false)}
-                className="text-neutral-500 hover:text-white"
-              >
-                <i className="fas fa-times"></i>
-              </button>
             </div>
             <div className="h-80 mb-8">{renderComparisonChart()}</div>
             <h3 className="text-sm font-bold text-neutral-400 uppercase tracking-wider mb-4">
               Season Stats
             </h3>
             {renderStatsComparison()}
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

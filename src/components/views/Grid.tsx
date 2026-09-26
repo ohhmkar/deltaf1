@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { fetchData } from "../../services/api";
-import {
-  subscribeToStats,
-  getCachedCareerStats,
-  isStatsLoading,
-} from "../../services/statsCache";
+import { loadCareerStats } from "../../services/statsCache";
 import { getTeamHex } from "../../utils/helpers";
-import { TeamLogo, Flag } from "../shared";
+import { TeamLogo, Flag, SkeletonCard } from "../shared";
 import type {
   DriverStanding,
   ConstructorStanding,
@@ -31,25 +27,21 @@ export const Grid: React.FC = () => {
     {},
   );
   const [loading, setLoading] = useState(true);
-  const [statsLoading, setStatsLoading] = useState(isStatsLoading());
+  const [statsState, setStatsState] = useState<"loading" | "ready" | "error">(
+    "loading",
+  );
 
   const currentYear = new Date().getFullYear();
-  useEffect(() => {
-    const cached = getCachedCareerStats();
-    if (cached) {
-      setCareerStats(cached.data);
-      setStatsLoading(false);
-    }
-
-    const unsubscribe = subscribeToStats((stats) => {
-      if (stats) {
-        setCareerStats(stats.data);
-        setStatsLoading(false);
-      }
-    });
-
-    return unsubscribe;
-  }, []);
+  const loadStats = () => {
+    setStatsState("loading");
+    loadCareerStats()
+      .then((s) => {
+        setCareerStats(s);
+        setStatsState("ready");
+      })
+      .catch(() => setStatsState("error"));
+  };
+  useEffect(loadStats, []);
 
   useEffect(() => {
     const load = async () => {
@@ -90,6 +82,7 @@ export const Grid: React.FC = () => {
               name: c.Constructor.name,
               nationality: c.Constructor.nationality,
               drivers: teamDrivers.map((d: any) => ({
+                id: d.Driver.driverId,
                 name: `${d.Driver.givenName} ${d.Driver.familyName}`,
                 code: d.Driver.code,
                 number: d.Driver.permanentNumber,
@@ -101,7 +94,6 @@ export const Grid: React.FC = () => {
           });
           setTeams(formattedTeams);
         }
-        // Career stats are now loaded via statsCache service (preloaded on app startup)
       } catch (e) {
         console.error("Grid Load Error", e);
       }
@@ -110,23 +102,42 @@ export const Grid: React.FC = () => {
     load();
   }, []);
 
-  const renderStars = (count: number, defending: boolean) => {
-    if (count === 0 && !defending) return null;
+  const statsBanner =
+    statsState === "loading" ? (
+      <div className="mb-4 px-3 py-2 bg-neutral-800/50 rounded-lg text-sm text-neutral-400 flex items-center gap-2">
+        <div className="loader-small"></div>
+        Loading career stats...
+      </div>
+    ) : statsState === "error" ? (
+      <div className="mb-4 px-3 py-2 bg-neutral-800/50 rounded-lg text-sm text-neutral-400 flex items-center gap-2">
+        Couldn't load career stats.
+        <button onClick={loadStats} className="underline hover:text-white">
+          Retry
+        </button>
+      </div>
+    ) : null;
+
+  // one star per title (the defending one in yellow), years spelled out
+  // underneath since hover tooltips don't exist on touch screens
+  const renderStars = (years: number[], defending: boolean) => {
+    if (!years.length) return null;
     return (
-      <div className="flex gap-1 mt-2 flex-wrap">
-        {defending && (
-          <i
-            className="fas fa-star text-yellow-500 text-sm"
-            title="Defending Champion"
-          ></i>
-        )}
-        {Array.from({ length: defending ? count - 1 : count }).map((_, i) => (
-          <i
-            key={i}
-            className="fas fa-star text-white text-sm"
-            title="World Champion"
-          ></i>
-        ))}
+      <div className="mt-2">
+        <div className="flex gap-1 flex-wrap" aria-hidden>
+          {years.map((y, i) => (
+            <i
+              key={y}
+              className={`fas fa-star text-sm ${
+                defending && i === years.length - 1 ? "text-yellow-500" : "text-white"
+              }`}
+              title={`World Champion ${y}${defending && i === years.length - 1 ? " (defending)" : ""}`}
+            ></i>
+          ))}
+        </div>
+        <div className="text-[10px] text-neutral-500 mt-1 leading-relaxed">
+          <span className="sr-only">World Champion: </span>
+          {years.join(" · ")}
+        </div>
       </div>
     );
   };
@@ -154,9 +165,11 @@ export const Grid: React.FC = () => {
           <div className="space-y-3">
             {team.drivers.length > 0 ? (
               team.drivers.map((driver: any) => (
-                <div
-                  key={driver.code}
-                  className="flex justify-between items-center bg-neutral-950/30 p-2 rounded border border-white/5"
+                <Link
+                  key={driver.id}
+                  to={`/standings/drivers?driver=${driver.id}`}
+                  title={`${driver.name}: season details`}
+                  className="flex justify-between items-center bg-neutral-950/30 light:bg-neutral-50 p-2 rounded border border-white/5 light:border-neutral-200 hover:border-neutral-600 transition-colors"
                 >
                   <div className="flex items-center space-x-3">
                     <span className="text-neutral-500 font-mono w-6 text-right text-sm">
@@ -185,7 +198,7 @@ export const Grid: React.FC = () => {
                       </div>
                     )}
                   </div>
-                </div>
+                </Link>
               ))
             ) : (
               <div className="text-center text-xs text-neutral-600 py-4 italic">
@@ -204,15 +217,17 @@ export const Grid: React.FC = () => {
         const stats = careerStats[d.Driver.driverId] || {
           wins: 0,
           poles: 0,
-          championships: 0,
+          titleYears: [],
           defending: false,
         };
         const teamColor = getTeamHex(d.Constructors[0]?.constructorId || "");
 
         return (
-          <div
+          <Link
             key={d.Driver.driverId}
-            className="minimal-card bg-neutral-900/20 overflow-hidden relative group hover:border-neutral-600 transition-all duration-300"
+            to={`/standings/drivers?driver=${d.Driver.driverId}`}
+            title="Season details"
+            className="minimal-card block bg-neutral-900/20 overflow-hidden relative group hover:border-neutral-600 transition-all duration-300"
           >
             <div
               className="absolute top-0 w-full h-1"
@@ -220,7 +235,7 @@ export const Grid: React.FC = () => {
             ></div>
             <div className="p-6">
               <div className="flex justify-between items-start mb-4">
-                <div className="text-3xl font-bold text-neutral-800 group-hover:text-neutral-700 transition-colors font-mono select-none absolute top-4 right-4">
+                <div className="text-3xl font-bold text-neutral-800 group-hover:text-neutral-700 light:text-neutral-200 light:group-hover:text-neutral-300 transition-colors font-mono select-none absolute top-4 right-4">
                   {d.Driver.permanentNumber}
                 </div>
                 <Flag
@@ -236,6 +251,7 @@ export const Grid: React.FC = () => {
                 <div className="text-xs text-neutral-500 uppercase tracking-wider mb-4">
                   {d.Constructors[0]?.name}
                 </div>
+                {renderStars(stats.titleYears, stats.defending)}
                 <div className="grid grid-cols-2 gap-2 mt-6 border-t border-neutral-800/50 pt-4">
                   <div>
                     <div className="text-[10px] text-neutral-500 uppercase">
@@ -258,13 +274,13 @@ export const Grid: React.FC = () => {
                       Titles
                     </div>
                     <div className="text-lg font-mono text-white">
-                      {stats.championships}
+                      {stats.titleYears.length}
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </Link>
         );
       })}
     </div>
@@ -276,7 +292,7 @@ export const Grid: React.FC = () => {
         const stats = careerStats[c.Constructor.constructorId] || {
           wins: 0,
           poles: 0,
-          championships: 0,
+          titleYears: [],
           defending: false,
         };
         const teamColor = getTeamHex(c.Constructor.constructorId);
@@ -306,7 +322,7 @@ export const Grid: React.FC = () => {
                 {c.Constructor.name}
               </h3>
 
-              {renderStars(stats.championships, stats.defending)}
+              {renderStars(stats.titleYears, stats.defending)}
 
               <div className="grid grid-cols-3 gap-2 mt-6 border-t border-neutral-800/50 pt-4">
                 <div>
@@ -330,7 +346,7 @@ export const Grid: React.FC = () => {
                     Titles
                   </div>
                   <div className="text-lg font-mono text-white">
-                    {stats.championships}
+                    {stats.titleYears.length}
                   </div>
                 </div>
               </div>
@@ -357,7 +373,7 @@ export const Grid: React.FC = () => {
             onClick={() => setTab("lineups")}
             className={`px-4 py-2 text-sm rounded transition-colors min-w-[110px] ${
               tab === "lineups"
-                ? "bg-white text-black font-medium"
+                ? "bg-white text-black light:bg-neutral-900 light:text-white font-medium"
                 : "text-neutral-500 hover:text-white"
             }`}
           >
@@ -367,7 +383,7 @@ export const Grid: React.FC = () => {
             onClick={() => setTab("drivers")}
             className={`px-4 py-2 text-sm rounded transition-colors min-w-[110px] ${
               tab === "drivers"
-                ? "bg-white text-black font-medium"
+                ? "bg-white text-black light:bg-neutral-900 light:text-white font-medium"
                 : "text-neutral-500 hover:text-white"
             }`}
           >
@@ -377,7 +393,7 @@ export const Grid: React.FC = () => {
             onClick={() => setTab("teams")}
             className={`px-4 py-2 text-sm rounded transition-colors min-w-[110px] ${
               tab === "teams"
-                ? "bg-white text-black font-medium"
+                ? "bg-white text-black light:bg-neutral-900 light:text-white font-medium"
                 : "text-neutral-500 hover:text-white"
             }`}
           >
@@ -387,31 +403,23 @@ export const Grid: React.FC = () => {
       </header>
 
       {loading ? (
-        <div className="flex justify-center p-24">
-          <div className="loader"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }, (_, i) => (
+            <SkeletonCard key={i} className="min-h-[180px]" />
+          ))}
         </div>
       ) : (
         <>
           {tab === "lineups" && renderLineups()}
           {tab === "drivers" && (
             <>
-              {statsLoading && (
-                <div className="mb-4 px-3 py-2 bg-neutral-800/50 rounded-lg text-sm text-neutral-400 flex items-center gap-2">
-                  <div className="loader-small"></div>
-                  Loading career stats in background...
-                </div>
-              )}
+              {statsBanner}
               {renderDriverStats()}
             </>
           )}
           {tab === "teams" && (
             <>
-              {statsLoading && (
-                <div className="mb-4 px-3 py-2 bg-neutral-800/50 rounded-lg text-sm text-neutral-400 flex items-center gap-2">
-                  <div className="loader-small"></div>
-                  Loading career stats in background...
-                </div>
-              )}
+              {statsBanner}
               {renderTeamStats()}
             </>
           )}

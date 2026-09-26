@@ -323,3 +323,14 @@ export const formatDateLocal = (dateStr: string, timeStr: string): string => {
     hour12: false,
   }).format(date);
 };
+
+// Ergast has no race times before ~2005; noon UTC keeps the right calendar
+// day in every timezone.
+export const raceStart = (r: { date: string; time?: string }): Date =>
+  new Date(`${r.date}T${r.time || "12:00:00Z"}`);
+
+// "GMT+5:30", "PDT", ... for labelling times shown in the viewer's timezone
+export const localTzLabel = (): string =>
+  new Intl.DateTimeFormat(undefined, { timeZoneName: "short" })
+    .formatToParts(new Date())
+    .find((p) => p.type === "timeZoneName")?.value ?? "local time";

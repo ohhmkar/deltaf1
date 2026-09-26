@@ -7,6 +7,8 @@ interface ThemeContextType {
   toggleTheme: () => void;
   spoilerFree: boolean;
   toggleSpoilerFree: () => void;
+  revealedPage: string | null; // page (path+query) where "reveal all" was used
+  revealAll: (page: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -23,15 +25,17 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("deltaf1-theme");
-      return (saved as Theme) || "dark";
+    try {
+      return localStorage.getItem("deltaf1-theme") === "light" ? "light" : "dark";
+    } catch {
+      return "dark"; // storage blocked (e.g. Safari private settings)
     }
-    return "dark";
   });
 
   useEffect(() => {
-    localStorage.setItem("deltaf1-theme", theme);
+    try {
+      localStorage.setItem("deltaf1-theme", theme);
+    } catch {}
 
     // Apply theme to document
     if (theme === "light") {
@@ -59,12 +63,21 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
       return !v;
     });
 
+  const [revealedPage, revealAll] = useState<string | null>(null);
+
   const toggleTheme = () => {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, spoilerFree, toggleSpoilerFree }}>
+    <ThemeContext.Provider value={{
+        theme,
+        toggleTheme,
+        spoilerFree,
+        toggleSpoilerFree,
+        revealedPage,
+        revealAll,
+      }}>
       {children}
     </ThemeContext.Provider>
   );

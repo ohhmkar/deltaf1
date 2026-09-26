@@ -1,59 +1,398 @@
 {
-  "generatedAt": "2026-08-30T11:37:05.095Z",
+  "generatedAt": "2026-09-26T09:54:50.558Z",
   "drivers": {
-    "farina": 1,
-    "fangio": 5,
-    "ascari": 2,
-    "hawthorn": 1,
-    "jack_brabham": 3,
-    "phil_hill": 1,
-    "hill": 2,
-    "clark": 2,
-    "surtees": 1,
-    "hulme": 1,
-    "stewart": 3,
-    "rindt": 1,
-    "emerson_fittipaldi": 2,
-    "lauda": 3,
-    "hunt": 1,
-    "mario_andretti": 1,
-    "scheckter": 1,
-    "jones": 1,
-    "piquet": 3,
-    "keke_rosberg": 1,
-    "prost": 4,
-    "senna": 3,
-    "mansell": 1,
-    "michael_schumacher": 7,
-    "damon_hill": 1,
-    "villeneuve": 1,
-    "hakkinen": 2,
-    "alonso": 2,
-    "raikkonen": 1,
-    "hamilton": 7,
-    "button": 1,
-    "vettel": 4,
-    "rosberg": 1,
-    "max_verstappen": 4,
-    "norris": 1
+    "farina": [
+      1950
+    ],
+    "fangio": [
+      1951,
+      1954,
+      1955,
+      1956,
+      1957
+    ],
+    "ascari": [
+      1952,
+      1953
+    ],
+    "hawthorn": [
+      1958
+    ],
+    "jack_brabham": [
+      1959,
+      1960,
+      1966
+    ],
+    "phil_hill": [
+      1961
+    ],
+    "hill": [
+      1962,
+      1968
+    ],
+    "clark": [
+      1963,
+      1965
+    ],
+    "surtees": [
+      1964
+    ],
+    "hulme": [
+      1967
+    ],
+    "stewart": [
+      1969,
+      1971,
+      1973
+    ],
+    "rindt": [
+      1970
+    ],
+    "emerson_fittipaldi": [
+      1972,
+      1974
+    ],
+    "lauda": [
+      1975,
+      1977,
+      1984
+    ],
+    "hunt": [
+      1976
+    ],
+    "mario_andretti": [
+      1978
+    ],
+    "scheckter": [
+      1979
+    ],
+    "jones": [
+      1980
+    ],
+    "piquet": [
+      1981,
+      1983,
+      1987
+    ],
+    "keke_rosberg": [
+      1982
+    ],
+    "prost": [
+      1985,
+      1986,
+      1989,
+      1993
+    ],
+    "senna": [
+      1988,
+      1990,
+      1991
+    ],
+    "mansell": [
+      1992
+    ],
+    "michael_schumacher": [
+      1994,
+      1995,
+      2000,
+      2001,
+      2002,
+      2003,
+      2004
+    ],
+    "damon_hill": [
+      1996
+    ],
+    "villeneuve": [
+      1997
+    ],
+    "hakkinen": [
+      1998,
+      1999
+    ],
+    "alonso": [
+      2005,
+      2006
+    ],
+    "raikkonen": [
+      2007
+    ],
+    "hamilton": [
+      2008,
+      2014,
+      2015,
+      2017,
+      2018,
+      2019,
+      2020
+    ],
+    "button": [
+      2009
+    ],
+    "vettel": [
+      2010,
+      2011,
+      2012,
+      2013
+    ],
+    "rosberg": [
+      2016
+    ],
+    "max_verstappen": [
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "norris": [
+      2025
+    ]
   },
   "constructors": {
-    "vanwall": 1,
-    "cooper-climax": 2,
-    "ferrari": 16,
-    "brm": 1,
-    "lotus-climax": 2,
-    "brabham-repco": 2,
-    "lotus-ford": 1,
-    "matra-ford": 1,
-    "team_lotus": 4,
-    "tyrrell": 1,
-    "mclaren": 10,
-    "williams": 9,
-    "benetton": 1,
-    "renault": 2,
-    "brawn": 1,
-    "red_bull": 6,
-    "mercedes": 8
+    "vanwall": [
+      1958
+    ],
+    "cooper-climax": [
+      1959,
+      1960
+    ],
+    "ferrari": [
+      1961,
+      1964,
+      1975,
+      1976,
+      1977,
+      1979,
+      1982,
+      1983,
+      1999,
+      2000,
+      2001,
+      2002,
+      2003,
+      2004,
+      2007,
+      2008
+    ],
+    "brm": [
+      1962
+    ],
+    "lotus-climax": [
+      1963,
+      1965
+    ],
+    "brabham-repco": [
+      1966,
+      1967
+    ],
+    "lotus-ford": [
+      1968
+    ],
+    "matra-ford": [
+      1969
+    ],
+    "team_lotus": [
+      1970,
+      1972,
+      1973,
+      1978
+    ],
+    "tyrrell": [
+      1971
+    ],
+    "mclaren": [
+      1974,
+      1984,
+      1985,
+      1988,
+      1989,
+      1990,
+      1991,
+      1998,
+      2024,
+      2025
+    ],
+    "williams": [
+      1980,
+      1981,
+      1986,
+      1987,
+      1992,
+      1993,
+      1994,
+      1996,
+      1997
+    ],
+    "benetton": [
+      1995
+    ],
+    "renault": [
+      2005,
+      2006
+    ],
+    "brawn": [
+      2009
+    ],
+    "red_bull": [
+      2010,
+      2011,
+      2012,
+      2013,
+      2022,
+      2023
+    ],
+    "mercedes": [
+      2014,
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021
+    ]
+  },
+  "defending": {
+    "driver": "norris",
+    "constructor": "mclaren"
+  },
+  "throughSeason": 2025,
+  "career": {
+    "antonelli": {
+      "wins": 0,
+      "poles": 0
+    },
+    "russell": {
+      "wins": 5,
+      "poles": 8
+    },
+    "hamilton": {
+      "wins": 105,
+      "poles": 104
+    },
+    "norris": {
+      "wins": 11,
+      "poles": 16
+    },
+    "leclerc": {
+      "wins": 8,
+      "poles": 27
+    },
+    "max_verstappen": {
+      "wins": 71,
+      "poles": 48
+    },
+    "piastri": {
+      "wins": 9,
+      "poles": 6
+    },
+    "hadjar": {
+      "wins": 0,
+      "poles": 0
+    },
+    "lawson": {
+      "wins": 0,
+      "poles": 0
+    },
+    "gasly": {
+      "wins": 1,
+      "poles": 0
+    },
+    "arvid_lindblad": {
+      "wins": 0,
+      "poles": 0
+    },
+    "colapinto": {
+      "wins": 0,
+      "poles": 0
+    },
+    "bearman": {
+      "wins": 0,
+      "poles": 0
+    },
+    "bortoleto": {
+      "wins": 0,
+      "poles": 0
+    },
+    "hulkenberg": {
+      "wins": 0,
+      "poles": 1
+    },
+    "sainz": {
+      "wins": 4,
+      "poles": 6
+    },
+    "albon": {
+      "wins": 0,
+      "poles": 0
+    },
+    "ocon": {
+      "wins": 1,
+      "poles": 0
+    },
+    "alonso": {
+      "wins": 32,
+      "poles": 22
+    },
+    "tsunoda": {
+      "wins": 0,
+      "poles": 0
+    },
+    "stroll": {
+      "wins": 0,
+      "poles": 1
+    },
+    "bottas": {
+      "wins": 10,
+      "poles": 20
+    },
+    "perez": {
+      "wins": 6,
+      "poles": 3
+    },
+    "mercedes": {
+      "wins": 131,
+      "poles": 144
+    },
+    "ferrari": {
+      "wins": 248,
+      "poles": 254
+    },
+    "mclaren": {
+      "wins": 203,
+      "poles": 177
+    },
+    "red_bull": {
+      "wins": 130,
+      "poles": 111
+    },
+    "rb": {
+      "wins": 0,
+      "poles": 0
+    },
+    "alpine": {
+      "wins": 1,
+      "poles": 0
+    },
+    "haas": {
+      "wins": 0,
+      "poles": 1
+    },
+    "audi": {
+      "wins": 0,
+      "poles": 0
+    },
+    "williams": {
+      "wins": 114,
+      "poles": 128
+    },
+    "aston_martin": {
+      "wins": 0,
+      "poles": 0
+    },
+    "cadillac": {
+      "wins": 0,
+      "poles": 0
+    }
   }
 }

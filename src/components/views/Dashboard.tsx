@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { fetchData } from "../../services/api";
-import { getTeamHex, formatDateLocal } from "../../utils/helpers";
-import { TeamLogo, Flag, SkeletonCard, Spoiler } from "../shared";
+import { getTeamHex, formatDateLocal, localTzLabel } from "../../utils/helpers";
+import { TeamLogo, Flag, SkeletonCard, Spoiler, useToast } from "../shared";
 import { F1_FACTS } from "../../data/facts";
 import type { Race, DriverStanding, ConstructorStanding } from "../../types";
 
@@ -22,6 +22,8 @@ export const Dashboard: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [countdown, setCountdown] = useState<string>("");
   const [onThisDay, setOnThisDay] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  const { addToast } = useToast();
 
   const loadData = useCallback(async (force = false) => {
     const opts = { useCache: !force };
@@ -77,16 +79,19 @@ export const Dashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const load = async () => {
-      await loadData();
-      setLoading(false);
-    };
-    load();
+    loadData()
+      .catch(() => setFailed(true))
+      .finally(() => setLoading(false));
   }, [loadData]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadData(true);
+    try {
+      await loadData(true);
+      setFailed(false);
+    } catch {
+      addToast("Couldn't refresh - check your connection", "error");
+    }
     setRefreshing(false);
   };
 
@@ -116,7 +121,7 @@ export const Dashboard: React.FC = () => {
   if (loading)
     return (
       <div className="p-6 md:p-16 max-w-7xl mx-auto fade-in pb-24 md:pb-12 h-screen overflow-y-auto">
-        <header className="mb-12 border-b border-neutral-800 dark:border-neutral-800 pb-6">
+        <header className="mb-12 border-b border-neutral-800 pb-6">
           <div className="h-8 w-32 bg-neutral-800 rounded animate-pulse mb-2"></div>
           <div className="h-4 w-48 bg-neutral-800 rounded animate-pulse"></div>
         </header>
@@ -135,15 +140,29 @@ export const Dashboard: React.FC = () => {
       </div>
     );
 
+  if (failed && !standings)
+    return (
+      <div className="h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
+        <p className="text-neutral-400">Couldn't load the season data.</p>
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="px-4 py-2 rounded-lg bg-neutral-800 text-neutral-200 hover:bg-neutral-700 text-sm disabled:opacity-50"
+        >
+          {refreshing ? "Retrying..." : "Retry"}
+        </button>
+      </div>
+    );
+
   return (
     <div className="p-6 md:p-16 max-w-7xl mx-auto fade-in pb-24 md:pb-12 h-screen overflow-y-auto">
-      <header className="mb-12 border-b border-neutral-800 dark:border-neutral-800 pb-6">
+      <header className="mb-12 border-b border-neutral-800 pb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-medium tracking-tight text-white dark:text-white mb-1">
+            <h1 className="text-2xl font-medium tracking-tight text-white mb-1">
               Dashboard
             </h1>
-            <p className="text-neutral-500 dark:text-neutral-500 text-sm">
+            <p className="text-neutral-500 text-sm">
               Overview of the current F1 Season
             </p>
           </div>
@@ -152,6 +171,7 @@ export const Dashboard: React.FC = () => {
             disabled={refreshing}
             className="p-2 rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-800 transition-all disabled:opacity-50"
             title="Refresh data"
+            aria-label="Refresh data"
           >
             <i
               className={`fas fa-sync-alt ${refreshing ? "animate-spin" : ""}`}
@@ -193,7 +213,10 @@ export const Dashboard: React.FC = () => {
                   {nextRace.Circuit.Location.country}
                 </div>
 
-                <div className="mt-6 grid grid-cols-2 gap-2 text-xs font-mono text-neutral-400 border-t border-neutral-800/50 pt-4">
+                <div className="mt-6 text-[10px] text-neutral-600 uppercase tracking-wider">
+                  Times in {localTzLabel()}
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-2 text-xs font-mono text-neutral-400 border-t border-neutral-800/50 pt-4">
                   {nextRace.FirstPractice && (
                     <div className="flex justify-between">
                       <span>FP1</span>

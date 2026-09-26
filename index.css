@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* light: follows the app toggle (html.light), set by ThemeContext */
+@custom-variant light (&:where(.light, .light *));
+
+/* SVG chart colours (inline SVG can't use light: classes on every attribute) */
+:root { --chart-bg: #171717; --chart-axis: #404040; --chart-grid: #262626; }
+html.light { --chart-bg: #ffffff; --chart-axis: #a3a3a3; --chart-grid: #e5e5e5; }
+
 /* Dark mode (default) */
 body {
   font-family: 'Inter', sans-serif;
@@ -103,22 +110,6 @@ html.light .loader-small {
   }
 }
 
-/* Light mode utility classes */
-html.light .light\:bg-white { background-color: #ffffff; }
-html.light .light\:bg-neutral-50 { background-color: #fafafa; }
-html.light .light\:bg-neutral-100 { background-color: #f5f5f5; }
-html.light .light\:bg-neutral-200 { background-color: #e5e5e5; }
-html.light .light\:text-neutral-900 { color: #171717; }
-html.light .light\:text-neutral-800 { color: #262626; }
-html.light .light\:text-neutral-700 { color: #404040; }
-html.light .light\:text-neutral-600 { color: #525252; }
-html.light .light\:text-neutral-500 { color: #737373; }
-html.light .light\:text-neutral-400 { color: #a3a3a3; }
-html.light .light\:border-neutral-200 { border-color: #e5e5e5; }
-html.light .light\:border-neutral-300 { border-color: #d4d4d4; }
-html.light .light\:hover\:bg-neutral-100:hover { background-color: #f5f5f5; }
-html.light .light\:hover\:text-neutral-700:hover { color: #404040; }
-
 /* Light mode - Override all white text to black/dark */
 html.light .text-white { color: #171717 !important; }
 html.light .text-neutral-200 { color: #404040 !important; }
@@ -134,6 +125,17 @@ html.light .bg-neutral-900\/50 { background-color: rgba(245, 245, 245, 0.7) !imp
 html.light .bg-neutral-950 { background-color: #ffffff !important; }
 html.light .bg-neutral-800 { background-color: #e5e5e5 !important; }
 html.light .bg-\[\#0a0a0a\] { background-color: #fafafa !important; }
+
+/* Light mode translucent panels (cards, stat tiles, overlays) */
+html.light .bg-neutral-900\/10 { background-color: rgba(245, 245, 245, 0.4) !important; }
+html.light .bg-neutral-900\/20 { background-color: rgba(245, 245, 245, 0.6) !important; }
+html.light .bg-neutral-900\/90 { background-color: rgba(255, 255, 255, 0.92) !important; }
+html.light .bg-neutral-800\/40 { background-color: rgba(229, 229, 229, 0.5) !important; }
+html.light .bg-neutral-800\/50 { background-color: rgba(229, 229, 229, 0.6) !important; }
+html.light .hover\:bg-neutral-700:hover,
+html.light .group:hover .group-hover\:bg-neutral-700 { background-color: #d4d4d4 !important; }
+/* white-on-black "active" pills would vanish on a white page: invert them */
+html.light .bg-white.text-black { background-color: #171717 !important; color: #ffffff !important; }
 
 /* Light mode borders */
 html.light .border-neutral-800 { border-color: #e5e5e5 !important; }
