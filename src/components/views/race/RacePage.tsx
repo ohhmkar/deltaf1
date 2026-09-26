@@ -11,6 +11,7 @@ import { PitStops } from "./PitStops";
 import { Championship } from "./Championship";
 import { Preview } from "./Preview";
 import { Strategy } from "./Strategy";
+import { LapChart } from "./LapChart";
 
 // One race weekend: /season?year=&round= (opened from the Calendar or a link).
 export const RacePage: React.FC<{
@@ -181,6 +182,11 @@ export const RacePage: React.FC<{
                 hasSprint={!!races[idx]?.Sprint}
               />
               <Strategy
+                season={raceDetails.season}
+                date={raceDetails.date}
+                results={raceDetails.Results ?? []}
+              />
+              <LapChart
                 season={raceDetails.season}
                 date={raceDetails.date}
                 results={raceDetails.Results ?? []}
