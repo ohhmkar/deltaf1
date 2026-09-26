@@ -10,6 +10,7 @@ import { CircuitHistory } from "./CircuitHistory";
 import { PitStops } from "./PitStops";
 import { Championship } from "./Championship";
 import { Preview } from "./Preview";
+import { Strategy } from "./Strategy";
 
 // One race weekend: /season?year=&round= (opened from the Calendar or a link).
 export const RacePage: React.FC<{
@@ -178,6 +179,11 @@ export const RacePage: React.FC<{
                 race={raceDetails.Results ?? []}
                 stopsByDriver={stopsByDriver}
                 hasSprint={!!races[idx]?.Sprint}
+              />
+              <Strategy
+                season={raceDetails.season}
+                date={raceDetails.date}
+                results={raceDetails.Results ?? []}
               />
               <PitStops stops={pitStops} results={raceDetails.Results ?? []} />
               <Championship year={year} round={round} />

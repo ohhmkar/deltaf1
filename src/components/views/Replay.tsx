@@ -19,6 +19,7 @@ import {
 import { useSearchParams } from "react-router";
 import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../shared";
+import { compound } from "../../utils/helpers";
 
 const WINDOW_MS = 60_000; // location fetched in 60s chunks (~0.5MB each, all cars)
 const VIEW = 1000; // svg viewBox size
@@ -55,17 +56,6 @@ const gapAt = (arr: Gap[], t: number): number | string | null => {
   }
   return res;
 };
-
-// tyre compound colour + single-letter label
-const COMPOUND: Record<string, { c: string; l: string }> = {
-  SOFT: { c: "#ef4444", l: "S" },
-  MEDIUM: { c: "#eab308", l: "M" },
-  HARD: { c: "#e5e5e5", l: "H" },
-  INTERMEDIATE: { c: "#22c55e", l: "I" },
-  WET: { c: "#3b82f6", l: "W" },
-};
-const compound = (name: string) =>
-  COMPOUND[name?.toUpperCase()] || { c: "#525252", l: "?" };
 
 // border colour for a race-control event
 const flagColor = (e: OF1RaceControl): string => {

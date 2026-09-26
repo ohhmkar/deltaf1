@@ -260,3 +260,14 @@ export const localTzLabel = (): string =>
   new Intl.DateTimeFormat(undefined, { timeZoneName: "short" })
     .formatToParts(new Date())
     .find((p) => p.type === "timeZoneName")?.value ?? "local time";
+
+// tyre compound colour + single-letter label (OpenF1 compound names)
+const COMPOUND: Record<string, { c: string; l: string }> = {
+  SOFT: { c: "#ef4444", l: "S" },
+  MEDIUM: { c: "#eab308", l: "M" },
+  HARD: { c: "#e5e5e5", l: "H" },
+  INTERMEDIATE: { c: "#22c55e", l: "I" },
+  WET: { c: "#3b82f6", l: "W" },
+};
+export const compound = (name: string) =>
+  COMPOUND[name?.toUpperCase()] || { c: "#525252", l: "?" };
